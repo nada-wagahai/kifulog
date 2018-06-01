@@ -49,6 +49,11 @@ class Parser
     @@sep
   end
 
+  attr_reader :start_date, :end_date
+
+  START_LABEL = "開始日時"
+  END_LABEL = "開始日時"
+
   def initialize(synonym)
     @synonym = synonym
     @procs = [
@@ -68,6 +73,13 @@ class Parser
   end
 
   def date(line)
+    label, d = line.split(@@sep)
+    case label
+    when START_LABEL
+      @start_date = d
+    when END_LABEL
+      @end_date = d
+    end
     line
   end 
 
@@ -80,7 +92,7 @@ class Parser
     m + @@sep + mask(pl)
   end
 
-  def parse(file)
+  def parse!(file)
     lines = []
     procs = @procs.clone
     IO.readlines(file).each do |line|
@@ -99,22 +111,23 @@ class Server < Sinatra::Base
   require 'psych'
   require 'csv'
 
-  @@index = {}
-  @@synonym = []
-
   def self.start(opt)
     @@index_file = opt.data_dir + "/index.yaml"
     @@records_dir = opt.data_dir + "/" + opt.records_dir
-    @@index = Psych.load_file @@index_file
-    begin
-      @@synonym = CSV.read "./synonym"
+    @@index = begin
+      Psych.load_file @@index_file
     rescue
-      @@synonym = []
+      []
     end
-    begin
-      @@credentials = CSV.read "./credentials"
+    @@synonym = begin
+      CSV.read "./synonym"
     rescue
-      @@credentials = []
+      []
+    end
+    @@credentials = begin
+      CSV.read "./credentials"
+    rescue
+      []
     end
 
     options = {
@@ -151,7 +164,7 @@ class Server < Sinatra::Base
     not_found if !File.exist? file
 
     parser = Parser.new(@@synonym)
-    text = parser.parse file
+    text = parser.parse! file
     erb :record, :locals => {
       id: c[:id],
       title: c[:title],
