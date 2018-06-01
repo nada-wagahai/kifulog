@@ -1,0 +1,14 @@
+<html>
+<head>
+<meta charset='UTF-8'/>
+<title>棋譜ログ</title>
+</head>
+<body>
+<ol>
+  <% index.each do |c| %>
+    <li><a href="records/<%= c[:id] %>"><%= c[:title] %></a></li>
+  <% end %>
+</ol>
+<a href="admin">admin</a>
+</body>
+</html>
