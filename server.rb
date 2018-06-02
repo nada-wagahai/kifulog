@@ -49,20 +49,25 @@ class Parser
     @@sep
   end
 
+  attr_reader :raw_text
   attr_reader :start_date, :end_date
+  attr_reader :player_first, :player_second
 
   START_LABEL = "開始日時"
-  END_LABEL = "開始日時"
+  END_LABEL = "終了日時"
+  FIRST_PLAYER_LABEL = "先手"
+  SECOND_PLAYER_LABEL = "後手"
 
   def initialize(synonym)
     @synonym = synonym
     @procs = [
-      :date,
-      :date,
-      nil,
-      nil,
-      :player,
-      :player,
+      :date, # 開始日時
+      :date, # 終了日時
+      :echo, # 手割合
+      :echo, # 棋戦
+      :player, # 先手
+      :player, # 後手
+      :echo, # ヘッダ
     ].map {|s|
       if s.nil?
         nil
@@ -88,8 +93,18 @@ class Parser
   end
   
   def player(line)
-    m, pl = line.split(@@sep)
-    m + @@sep + mask(pl)
+    label, pl = line.split(@@sep)
+    case label
+    when FIRST_PLAYER_LABEL
+      @player_first = pl
+    when SECOND_PLAYER_LABEL
+      @player_second = pl
+    end
+    label + @@sep + mask(pl)
+  end
+
+  def echo(line)
+    line
   end
 
   def parse!(file)
@@ -103,7 +118,7 @@ class Parser
         m.call line.chomp
       end
     end
-    lines.join($/)
+    @raw_text = lines.join($/)
   end
 end
 
@@ -164,7 +179,8 @@ class Server < Sinatra::Base
     not_found if !File.exist? file
 
     parser = Parser.new(@@synonym)
-    text = parser.parse! file
+    parser.parse! file
+    text = parser.raw_text
     erb :record, :locals => {
       id: c[:id],
       title: c[:title],
@@ -183,10 +199,10 @@ class Server < Sinatra::Base
   post '/admin/reindex' do
     @@index = {}
     Dir.entries(@@records_dir).grep_v(".").grep_v("..").each do |file|
-      open(@@records_dir + "/" + file) {|f|
-        date = f.readline.chomp.split(Parser.sep)[1]
-        @@index[file] = {:id => file, :title => date}
-      }
+      parser = Parser.new @@synonym
+      parser.parse!(@@records_dir + "/" + file)
+      date = parser.start_date
+      @@index[file] = {:id => file, :title => parser.start_date}
     end
     IO.write @@index_file, Psych.dump(@@index)
     redirect back
