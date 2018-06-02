@@ -45,9 +45,6 @@ end
 
 class Parser
   @@sep = "："
-  def self.sep
-    @@sep
-  end
 
   attr_reader :raw_text
   attr_reader :start_date, :end_date
