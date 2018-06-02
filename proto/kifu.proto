@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package kifu;
+
+message Pos {
+ int32 x = 1;
+ int32 y = 2;
+ // (1,1) - (9,9)
+ // (0,0) is captured
+}
+
+message Player {
+  enum Order {
+    FIRST = 0;
+    SECOND = 1;
+  }
+  Order order = 1;
+  string name = 2;
+}
+
+message Piece {
+  enum Type {
+    NULL = 0;
+    GYOKU = 1;
+    KIN = 2;
+    GIN = 3;
+    NARI_GIN = 4;
+    KEI = 5;
+    NARI_KEI = 6;
+    KYOU = 7;
+    NARI_KYOU = 8;
+    KAKU = 9;
+    UMA = 10;
+    HISHA = 11;
+    RYU = 12;
+    FU = 13;
+    TO = 14;
+  }
+  Type type = 1;
+  Pos pos = 2;
+  Player.Order order = 3;
+}
+
+message Step {
+  int32 seq = 1;
+  Pos pos = 2;
+  Pos prev = 3;
+  Piece.Type piece = 4;
+  bool promoted = 5;
+  bool putted = 6;
+  Player.Order player = 7;
+  int32 timestamp_sec = 8;
+  int32 thinking_sec = 9;
+  bool finished = 10;
+}
+
+message Board {
+  int32 seq = 1;
+  repeated Piece pieces = 2;
+}
+
+message Kifu {
+  int64 start_ts = 1;
+  int64 end_ts = 2;
+  string handicap = 3;
+  string game_name = 4;
+  Player first_player = 5;
+  Player second_player = 6;
+  repeated Step steps = 7;
+  repeated Board boards = 8;
+}
