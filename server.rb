@@ -132,7 +132,7 @@ class Server < Sinatra::Base
     @@index = begin
       Psych.load_file @@index_file
     rescue
-      []
+      {}
     end
     @@synonym = begin
       CSV.read "./synonym"
