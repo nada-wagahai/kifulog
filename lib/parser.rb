@@ -22,8 +22,7 @@ class Parser
 
   PAT = Regexp.compile("([%s])([%s])(%s)(成)?(打)?" % [X, Y, PIECES.join("|")])
 
-  def initialize(synonym)
-    @synonym = synonym
+  def initialize
     @players = []
     @steps = []
     @procs = [
@@ -33,7 +32,7 @@ class Parser
       :game_p, # 棋戦
       :player, # 先手
       :player, # 後手
-      :echo, # ヘッダ
+      :nop, # ヘッダ
     ].map {|s|
       method(s)
     }
@@ -47,11 +46,6 @@ class Parser
     when END_LABEL
       @end_date = Time.parse d
     end
-    line
-  end
-
-  def mask(name)
-    @synonym.find(proc { ["", "*****"] }) {|s| s[0] == name }[1]
   end
 
   def player(line)
@@ -62,21 +56,17 @@ class Parser
     when SECOND_PLAYER_LABEL
       @players << Kifu::Player.new(order: 1, name: pl)
     end
-    label + SEP + mask(pl)
   end
 
   def handicap_p(line)
     label, @handicap = line.split(SEP)
-    line
   end
 
   def game_p(line)
     label, @game_name = line.split(SEP)
-    line
   end
 
-  def echo(line)
-    line
+  def nop(line)
   end
 
   def step(line)
@@ -91,8 +81,8 @@ class Parser
     h, m, s = timestamp_str.split(":").map{|v| v.to_i}
     timestamp = h * 60 * 60 + m * 60 + s
 
-    pos, piece, promoted, putted = if step_str == "投了"
-      [Kifu::Pos.new(x: 0, y: 0), 0, false, false]
+    pos, piece, promoted, putted, finished = if step_str == "投了"
+      [Kifu::Pos.new(x: 0, y: 0), 0, false, false, true]
     else
       m = PAT.match(step_str)
       [
@@ -100,6 +90,7 @@ class Parser
         PIECES.index(m[3]) + 1,
         !m[4].nil?,
         !m[5].nil?,
+        false,
       ]
     end
 
@@ -112,26 +103,25 @@ class Parser
       piece: piece,
       promoted: promoted,
       putted: putted,
+      finished: finished,
       timestamp_sec: timestamp,
       thinking_sec: thinking,
     )
-
-    line
   end
 
-  def parse!(file)
-    lines = []
+  def parse!(input)
     procs = @procs.clone
-    IO.readlines(file).each do |line|
+    input.split($/).each do |line|
+      break if line.empty?
       m = procs.shift
-      lines << if m.nil?
+      if m.nil?
         step line.chomp
       else
         m.call line.chomp
       end
     end
 
-    [generate_kifu, lines.join($/)]
+    generate_kifu
   end
 
   def generate_kifu

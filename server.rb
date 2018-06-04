@@ -3,6 +3,7 @@
 require 'sinatra/base'
 
 require './lib/parser'
+require './lib/db/file'
 
 class Option
   require 'optparse'
@@ -50,6 +51,7 @@ class Server < Sinatra::Base
   require 'csv'
 
   def self.start(opt)
+    @@db = FileDB.new(opt.data_dir + "/db")
     @@index_file = opt.data_dir + "/index.yaml"
     @@records_dir = opt.data_dir + "/" + opt.records_dir
     @@index = begin
@@ -94,20 +96,12 @@ class Server < Sinatra::Base
     erb :index, :locals => {:index => @@index.values}
   end
 
-  get '/records/:id' do
-    c = @@index[params['id']]
-    not_found if c.nil?
+  get '/kifu/:id' do
+    kifu = @@db.get_kifu(params['id'])
+    not_found if kifu.nil?
 
-    file = @@records_dir + '/' + c[:id]
-    not_found if !File.exist? file
-
-    parser = Parser.new(@@synonym)
-    kifu, text = parser.parse! file
-    erb :record, :locals => {
-      id: c[:id],
-      title: c[:title],
-      text: text,
-    }
+    kifu.synonym = @@synonym
+    erb :kifu, :locals => {kifu: kifu}
   end
 
   before '/admin*' do
@@ -120,20 +114,25 @@ class Server < Sinatra::Base
 
   post '/admin/reindex' do
     @@index = {}
-    Dir.entries(@@records_dir).grep_v(".").grep_v("..").each do |file|
-      parser = Parser.new @@synonym
-      parser.parse!(@@records_dir + "/" + file)
-      date = parser.start_date
-      @@index[file] = {:id => file, :title => parser.start_date}
+    @@db.get_kifu_all.each do |kifu|
+      id = kifu.kifu_id
+      @@index[id] = {id: id, :title => kifu.start_time}
     end
     IO.write @@index_file, Psych.dump(@@index)
     redirect back
   end
 
   post '/admin/upload' do
-    kifu = params['kifu']
-    file = @@records_dir + "/" + Time.now.to_i.to_s
-    IO.write(file, kifu)
+    input = params['kifu']
+
+    parser = Parser.new
+    kifu = parser.parse! input
+
+    file = @@records_dir + '/' + kifu.kifu_id
+    IO.write(file, input)
+
+    @@db.put_kifu(kifu)
+
     redirect back
   end
 
