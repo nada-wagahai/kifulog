@@ -102,8 +102,7 @@ class Server < Sinatra::Base
     not_found if !File.exist? file
 
     parser = Parser.new(@@synonym)
-    parser.parse! file
-    text = parser.raw_text
+    kifu, text = parser.parse! file
     erb :record, :locals => {
       id: c[:id],
       title: c[:title],

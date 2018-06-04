@@ -1,13 +1,18 @@
+require 'time'
 require "./proto/kifu_pb"
+require "./lib/pb"
 
 class Parser
-  attr_reader :raw_text
   attr_reader :start_date, :end_date
-  attr_reader :player_first, :player_second
+  attr_reader :handicap, :game_name
+  attr_reader :players
+  attr_reader :steps
 
   SEP = "："
   START_LABEL = "開始日時"
   END_LABEL = "終了日時"
+  HANDICAP_LABEL = "手合割"
+  GAME_LABEL = "棋戦"
   FIRST_PLAYER_LABEL = "先手"
   SECOND_PLAYER_LABEL = "後手"
 
@@ -19,17 +24,18 @@ class Parser
 
   def initialize(synonym)
     @synonym = synonym
+    @players = []
     @steps = []
     @procs = [
       :date, # 開始日時
       :date, # 終了日時
-      :echo, # 手割合
-      :echo, # 棋戦
+      :handicap_p, # 手割合
+      :game_p, # 棋戦
       :player, # 先手
       :player, # 後手
       :echo, # ヘッダ
     ].map {|s|
-      self.method(s)
+      method(s)
     }
   end
 
@@ -37,9 +43,9 @@ class Parser
     label, d = line.split(SEP)
     case label
     when START_LABEL
-      @start_date = d
+      @start_date = Time.parse d
     when END_LABEL
-      @end_date = d
+      @end_date = Time.parse d
     end
     line
   end
@@ -52,11 +58,21 @@ class Parser
     label, pl = line.split(SEP)
     case label
     when FIRST_PLAYER_LABEL
-      @player_first = pl
+      @players << Kifu::Player.new(order: 0, name: pl)
     when SECOND_PLAYER_LABEL
-      @player_second = pl
+      @players << Kifu::Player.new(order: 1, name: pl)
     end
     label + SEP + mask(pl)
+  end
+
+  def handicap_p(line)
+    label, @handicap = line.split(SEP)
+    line
+  end
+
+  def game_p(line)
+    label, @game_name = line.split(SEP)
+    line
   end
 
   def echo(line)
@@ -109,11 +125,23 @@ class Parser
     IO.readlines(file).each do |line|
       m = procs.shift
       lines << if m.nil?
-        line.chomp
+        step line.chomp
       else
         m.call line.chomp
       end
     end
-    @raw_text = lines.join($/)
+
+    [generate_kifu, lines.join($/)]
+  end
+
+  def generate_kifu
+    Kifu::Kifu.new(
+      start_ts: @start_date.to_i,
+      end_ts: @end_date.to_i,
+      handicap: @handicap,
+      game_name: @game_name,
+      players: @players,
+      steps: @steps,
+    ).normalize!
   end
 end
