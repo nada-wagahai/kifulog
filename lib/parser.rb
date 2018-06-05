@@ -16,11 +16,7 @@ class Parser
   FIRST_PLAYER_LABEL = "先手"
   SECOND_PLAYER_LABEL = "後手"
 
-  X = "１２３４５６７８９"
-  Y = "一二三四五六七八九"
-  PIECES = ["王", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "角", "馬", "飛", "竜", "歩", "と"]
-
-  PAT = Regexp.compile("([%s])([%s])(%s)(成)?(打)?" % [X, Y, PIECES.join("|")])
+  PAT = Regexp.compile("([%s])([%s])(%s)(成)?(打)?" % [Kifu::Pos::X, Kifu::Pos::Y, Kifu::Piece::Type::PIECES.join("|")])
 
   def initialize
     @players = []
@@ -86,8 +82,8 @@ class Parser
     else
       m = PAT.match(step_str)
       [
-        Kifu::Pos.new(x: X.index(m[1]) + 1, y: Y.index(m[2]) + 1),
-        PIECES.index(m[3]) + 1,
+        Kifu::Pos.new(x: Kifu::Pos.from_code_x(m[1]), y: Kifu::Pos.from_code_y(m[2])),
+        Kifu::Piece::Type.from_name(m[3]),
         !m[4].nil?,
         !m[5].nil?,
         false,

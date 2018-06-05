@@ -35,7 +35,7 @@ class Kifu::Kifu
 
   def kifu_id
     str = players.map {|p| p.name}.join("-")
-    "%d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
+    "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
   end
 
   private
@@ -53,6 +53,14 @@ class Kifu::Pos
   X = "１２３４５６７８９"
   Y = "一二三四五六七八九"
 
+  def self.from_code_x(c)
+    X.index(c) + 1
+  end
+
+  def self.from_code_y(c)
+    Y.index(c) + 1
+  end
+
   def to_code
     return "" if x == 0 || y == 0
     X[x-1] + Y[y-1]
@@ -61,17 +69,48 @@ class Kifu::Pos
   def to_a
     [x, y]
   end
+
+  def to_key
+    "%d.%d" % self.to_a
+  end
 end
 
 class Kifu::Piece
   def <=>(o)
     r = cmp(o)
-    raise "Same piece" if r == 0
+    raise "Same piece: self=%s, o=%s" % [self, o] if r == 0 && !self.captured?
     r
+  end
+
+  def capture!
+    demote!
+    self.pos = Kifu::Pos.new(x: 0, y: 0)
+    self.order = Kifu::Player::Order.flip(self.order)
+    self
   end
 
   def captured?
     pos.nil? || self.pos.x == 0
+  end
+
+  def promote!
+    case self.type
+    when :GIN
+      self.type = :NARI_GIN
+    when :KEI
+      self.type = :NARI_KEI
+    when :KYOU
+      self.type = :NARI_KYOU
+    when :KAKU
+      self.type = :UMA
+    when :HISHA
+      self.type = :RYU
+    when :FU
+      self.type = :TO
+    else
+      raise "can't promote"
+    end
+    self
   end
 
   def name
@@ -85,8 +124,8 @@ class Kifu::Piece
   private
 
   def cmp(o)
+    t = Kifu::Player::Order
     if self.captured? && o.captured?
-      t = Kifu::Player::Order
       a = t.resolve(o.order) <=> t.resolve(self.order)
       if a == 0
         t = Kifu::Piece::Type
@@ -94,9 +133,9 @@ class Kifu::Piece
       end
       return a
     elsif self.captured?
-      return self.order == :SECOND ? -1 : 1
+      return self.order == t::SECOND ? -1 : 1
     elsif o.captured?
-      return o.order == :SECOND ? 1 : -1
+      return o.order == t::SECOND ? 1 : -1
     end
 
     py = self.pos.y <=> o.pos.y
@@ -104,10 +143,34 @@ class Kifu::Piece
 
     o.pos.x <=> self.pos.x
   end
+
+  def demote!
+    case self.type
+    when :NARI_GIN
+      self.type = :GIN
+    when :NARI_KEI
+      self.type = :KEI
+    when :NARI_KYOU
+      self.type = :KYOU
+    when :UMA
+      self.type = :KAKU
+    when :RYU
+      self.type = :HISHA
+    when :TO
+      self.type = :FU
+    else
+      # do nothing
+    end
+    self
+  end
 end
 
 module Kifu::Piece::Type
   PIECES = ["王", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "角", "馬", "飛", "竜", "歩", "と"]
+
+  def self.from_name(str)
+    PIECES.index(str) + 1
+  end
 
   def self.name(sym)
     n = resolve(sym)
@@ -124,6 +187,17 @@ module Kifu::Player::Order
       "☗"
     when :SECOND
       "☖"
+    else
+      raise "unknown order = %s" % sym
+    end
+  end
+
+  def self.flip(sym)
+    case sym
+    when :FIRST
+      :SECOND
+    when :SECOND
+      :FIRST
     else
       raise "unknown order = %s" % sym
     end
@@ -203,6 +277,35 @@ class Kifu::Board
   end
 
   def normalize!
-    pieces.sort!
+    self.pieces.sort!
+    self
+  end
+
+  def do_step!(step)
+    h = self.to_h
+
+    dp = h[step.pos.to_key]
+    dp.capture! if !dp.nil?
+
+    pkey = step.putted ? step.player.to_s + ":" + step.piece.to_s : step.prev.to_key
+    p = h[pkey]
+    p.pos = step.pos
+    p.promote! if step.promoted
+
+    self.normalize!
+  end
+
+  def to_h
+    ret = {}
+    self.pieces.each do |p|
+      key = p.captured? ? p.order.to_s + ":" + p.type.to_s : p.pos.to_key
+      ret[key] = p
+    end
+    ret
+  end
+
+  def to_key
+    bytes = Kifu::Board.encode self
+    Digest::MD5.hexdigest bytes
   end
 end
