@@ -65,10 +65,8 @@ end
 
 class Kifu::Piece
   def <=>(o)
-    c = [self, o]
     r = cmp(o)
     raise "Same piece" if r == 0
-    puts "%s => %s" % [c, r == -1]
     r
   end
 
@@ -78,6 +76,10 @@ class Kifu::Piece
 
   def name
     Kifu::Piece::Type.name(self.type)
+  end
+
+  def to_s
+    "%s%s%s" % [Kifu::Player::Order.label(self.order), self.pos.to_code, self.name]
   end
 
   private
@@ -100,7 +102,7 @@ class Kifu::Piece
     py = self.pos.y <=> o.pos.y
     return py if py != 0
 
-    self.pos.x <=> o.pos.x
+    o.pos.x <=> self.pos.x
   end
 end
 
