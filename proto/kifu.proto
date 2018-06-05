@@ -60,8 +60,12 @@ message Board {
 
 message BoardDescription {
   Board board = 1;
-  string kifu_id = 2;
-  int32 seq = 3;
+  message StepId {
+    string kifu_id = 1;
+    int32 seq = 2;
+	bool finished = 3;
+  }
+  repeated StepId step_ids = 2;
 }
 
 message Kifu {
@@ -71,5 +75,5 @@ message Kifu {
   string game_name = 4;
   repeated Player players = 5;
   repeated Step steps = 6;
-  repeated Board boards = 7;
+  repeated string board_ids = 7;
 }

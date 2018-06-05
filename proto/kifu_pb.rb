@@ -55,8 +55,12 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "kifu.BoardDescription" do
     optional :board, :message, 1, "kifu.Board"
-    optional :kifu_id, :string, 2
-    optional :seq, :int32, 3
+    repeated :step_ids, :message, 2, "kifu.BoardDescription.StepId"
+  end
+  add_message "kifu.BoardDescription.StepId" do
+    optional :kifu_id, :string, 1
+    optional :seq, :int32, 2
+    optional :finished, :bool, 3
   end
   add_message "kifu.Kifu" do
     optional :start_ts, :int64, 1
@@ -65,7 +69,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :game_name, :string, 4
     repeated :players, :message, 5, "kifu.Player"
     repeated :steps, :message, 6, "kifu.Step"
-    repeated :boards, :message, 7, "kifu.Board"
+    repeated :board_ids, :string, 7
   end
 end
 
@@ -78,5 +82,6 @@ module Kifu
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Step").msgclass
   Board = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Board").msgclass
   BoardDescription = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.BoardDescription").msgclass
+  BoardDescription::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.BoardDescription.StepId").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu").msgclass
 end

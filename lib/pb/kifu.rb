@@ -1,4 +1,5 @@
 require 'digest'
+require './proto/kifu_pb'
 
 class Kifu::Kifu
   def synonym
@@ -36,6 +37,20 @@ class Kifu::Kifu
   def kifu_id
     str = players.map {|p| p.name}.join("-")
     "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
+  end
+
+  def boards!
+    bs = []
+    board = Kifu::Board.init
+    bs << [board.to_key, board]
+    self.board_ids << board.to_key
+    self.steps.each do |step|
+      b = board.do_step!(step).clone
+      key = b.to_key
+      self.board_ids << key
+      bs << [key, b]
+    end
+    bs
   end
 
   private
@@ -282,6 +297,8 @@ class Kifu::Board
   end
 
   def do_step!(step)
+    return self if step.finished
+
     h = self.to_h
 
     dp = h[step.pos.to_key]
@@ -289,6 +306,7 @@ class Kifu::Board
 
     pkey = step.putted ? step.player.to_s + ":" + step.piece.to_s : step.prev.to_key
     p = h[pkey]
+    raise "pkey not found: %s(%s)" % [pkey, step.to_s] if p.nil?
     p.pos = step.pos
     p.promote! if step.promoted
 
