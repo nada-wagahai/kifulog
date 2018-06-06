@@ -20,7 +20,10 @@ def main(args)
     }
 
     kifu = parser.parse! input
+    boards = kifu.boards!
+
     db.put_kifu(kifu)
+    db.put_boards(boards)
     index.put(kifu)
 
     kifu_id = kifu.kifu_id

@@ -117,10 +117,6 @@ class Parser
       end
     end
 
-    generate_kifu
-  end
-
-  def generate_kifu
     Kifu::Kifu.new(
       start_ts: @start_date.to_i,
       end_ts: @end_date.to_i,

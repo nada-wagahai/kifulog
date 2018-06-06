@@ -18,6 +18,19 @@ class Kifu::Kifu
     self
   end
 
+  def boards!
+    bs = []
+    b = Kifu::Board.init
+    self.board_ids << b.to_key
+    bs << b
+    self.steps.each do |step|
+      b = b.do_step(step)
+      bs << b
+      self.board_ids << b.to_key
+    end
+    bs
+  end
+
   def start_time
     Time.at start_ts
   end
@@ -37,20 +50,6 @@ class Kifu::Kifu
   def kifu_id
     str = players.map {|p| p.name}.join("-")
     "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
-  end
-
-  def boards!
-    bs = []
-    board = Kifu::Board.init
-    bs << [board.to_key, board]
-    self.board_ids << board.to_key
-    self.steps.each do |step|
-      b = board.do_step!(step).clone
-      key = b.to_key
-      self.board_ids << key
-      bs << [key, b]
-    end
-    bs
   end
 
   private
@@ -296,10 +295,11 @@ class Kifu::Board
     self
   end
 
-  def do_step!(step)
-    return self if step.finished
+  def do_step(step)
+    b = self.clone
+    return b if step.finished
 
-    h = self.to_h
+    h = b.to_h
 
     dp = h[step.pos.to_key]
     dp.capture! if !dp.nil?
@@ -310,7 +310,7 @@ class Kifu::Board
     p.pos = step.pos
     p.promote! if step.promoted
 
-    self.normalize!
+    b.normalize!
   end
 
   def to_h

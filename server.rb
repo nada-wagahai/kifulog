@@ -80,12 +80,14 @@ class Server < Sinatra::Base
 
     parser = Parser.new
     kifu = parser.parse! input
+    boards = kifu.boards!
 
     file = @@records_dir + '/' + kifu.kifu_id
     IO.write(file, input)
 
     @@db.put_kifu(kifu)
     @@index.put(kifu)
+    @@db.put_boards(boards)
 
     redirect back
   end

@@ -63,7 +63,7 @@ message BoardDescription {
   message StepId {
     string kifu_id = 1;
     int32 seq = 2;
-	bool finished = 3;
+    bool finished = 3;
   }
   repeated StepId step_ids = 2;
 }
