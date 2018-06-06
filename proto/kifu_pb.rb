@@ -24,17 +24,17 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_enum "kifu.Piece.Type" do
     value :NULL, 0
     value :GYOKU, 1
-    value :KIN, 2
-    value :GIN, 3
-    value :NARI_GIN, 4
-    value :KEI, 5
-    value :NARI_KEI, 6
-    value :KYOU, 7
-    value :NARI_KYOU, 8
-    value :KAKU, 9
-    value :UMA, 10
-    value :HISHA, 11
-    value :RYU, 12
+    value :HISHA, 2
+    value :RYU, 3
+    value :KAKU, 4
+    value :UMA, 5
+    value :KIN, 6
+    value :GIN, 7
+    value :NARI_GIN, 8
+    value :KEI, 9
+    value :NARI_KEI, 10
+    value :KYOU, 11
+    value :NARI_KYOU, 12
     value :FU, 13
     value :TO, 14
   end

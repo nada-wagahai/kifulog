@@ -13,12 +13,13 @@
   <dt>後手</dt><dd><%= kifu.second_players_name %></dd>
   </dl>
   <table>
-    <tr><th>手数</th><th>指手</th><th>消費時間</th></tr>
+    <tr><th>手数</th><th>指手</th><th>消費時間</th><th></th></tr>
     <% kifu.steps.each do |step| %>
       <tr>
         <td><%= step.seq %></td>
         <td><%= step.move %></td>
         <td><%= step.elapsed_time %></td>
+        <td><a href="./<%= params['id'] %>/<%= step.seq %>">■</a></td>
       </tr>
     <% end %>
   </table>

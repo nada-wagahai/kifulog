@@ -22,17 +22,17 @@ message Piece {
   enum Type {
     NULL = 0;
     GYOKU = 1;
-    KIN = 2;
-    GIN = 3;
-    NARI_GIN = 4;
-    KEI = 5;
-    NARI_KEI = 6;
-    KYOU = 7;
-    NARI_KYOU = 8;
-    KAKU = 9;
-    UMA = 10;
-    HISHA = 11;
-    RYU = 12;
+    HISHA = 2;
+    RYU = 3;
+    KAKU = 4;
+    UMA = 5;
+    KIN = 6;
+    GIN = 7;
+    NARI_GIN = 8;
+    KEI = 9;
+    NARI_KEI = 10;
+    KYOU = 11;
+    NARI_KYOU = 12;
     FU = 13;
     TO = 14;
   }

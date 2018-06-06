@@ -1,0 +1,40 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>scene</title>
+<style>
+table.board {
+  border-collapse: collapse;
+  border-width: 1px;
+  border-style: solid;
+}
+
+table.board td {
+  border-width: 1px;
+  border-style: solid;
+  width: 31px;
+  height: 31px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+table.board td.second {
+  transform: rotate(180deg);
+}
+</style>
+</head>
+<body>
+  <div>☖持駒: <% captured_second.each do |p| %><%= p.name %><% end %></div>
+  <table class="board">
+  <% pieces.each do |rows| %>
+    <tr>
+    <% rows.each do |p| %>
+      <td<% if p.order == :SECOND %> class="second"<% end %>><%= p.name_fig %></td>
+    <% end %>
+    </tr>
+  <% end %>
+  </table>
+  <div>☗持駒: <% captured_first.each do |p| %><%= p.name %><% end %></div>
+</body>
+</html>

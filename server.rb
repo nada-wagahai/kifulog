@@ -64,7 +64,24 @@ class Server < Sinatra::Base
     not_found if kifu.nil?
 
     kifu.synonym = @@synonym
-    erb :kifu, :locals => {kifu: kifu}
+    erb :kifu, :locals => {kifu: kifu, params: params}
+  end
+
+  get '/kifu/:kifu_id/:seq' do
+    kifu = @@db.get_kifu(params['kifu_id'])
+    not_found if kifu.nil?
+
+    board_id = kifu.board_ids[params['seq'].to_i]
+
+    board = @@db.get_board(board_id)
+    not_found if board.nil?
+
+    captured_first, captured_second, pieces = board.to_v
+    erb :scene, :locals => {
+      captured_first: captured_first,
+      captured_second: captured_second,
+      pieces: pieces,
+    }
   end
 
   before '/admin*' do

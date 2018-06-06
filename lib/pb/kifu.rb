@@ -131,6 +131,10 @@ class Kifu::Piece
     Kifu::Piece::Type.name(self.type)
   end
 
+  def name_fig
+    Kifu::Piece::Type.name_fig(self.type)
+  end
+
   def to_s
     "%s%s%s" % [Kifu::Player::Order.label(self.order), self.pos.to_code, self.name]
   end
@@ -180,7 +184,8 @@ class Kifu::Piece
 end
 
 module Kifu::Piece::Type
-  PIECES = ["王", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "角", "馬", "飛", "竜", "歩", "と"]
+  PIECES = ["王", "飛", "竜", "角", "馬", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "歩", "と"]
+  PIECES_FIG = ["玉", "飛", "竜", "角", "馬", "金", "銀", "全", "桂", "圭", "香", "杏", "歩", "と"]
 
   def self.from_name(str)
     PIECES.index(str) + 1
@@ -191,6 +196,13 @@ module Kifu::Piece::Type
     raise "unknown piece type = %s(%d)" % [sym, n] if n.nil? || n < 0 || n > PIECES.size
     return "" if n == 0
     PIECES[n-1]
+  end
+
+  def self.name_fig(sym)
+    n = resolve(sym)
+    raise "unknown piece type = %s(%d)" % [sym, n] if n.nil? || n < 0 || n > PIECES.size
+    return "" if n == 0
+    PIECES_FIG[n-1]
   end
 end
 
@@ -295,8 +307,13 @@ class Kifu::Board
     self
   end
 
+  def copy
+    bytes = Kifu::Board.encode self
+    Kifu::Board.decode bytes
+  end
+
   def do_step(step)
-    b = self.clone
+    b = self.copy
     return b if step.finished
 
     h = b.to_h
@@ -325,5 +342,35 @@ class Kifu::Board
   def to_key
     bytes = Kifu::Board.encode self
     Digest::MD5.hexdigest bytes
+  end
+
+  def to_v
+    captured_first = []
+    captured_second = []
+    pss = []
+    9.times {
+      ps = []
+      9.times {
+        ps << Kifu::Piece.new(type: Kifu::Piece::Type::NULL)
+      }
+      pss << ps
+    }
+
+    self.pieces.each {|p|
+      if p.captured?
+        case p.order
+        when :FIRST
+          captured_first << p
+        when :SECOND
+          captured_second << p
+        else
+          raise "unknown order = %s" % p.order
+        end
+      else
+        pss[p.pos.y-1][9-p.pos.x] = p
+      end
+    }
+
+    [captured_first, captured_second, pss]
   end
 end
