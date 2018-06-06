@@ -79,8 +79,8 @@ class Server < Sinatra::Base
 
     captured_first, captured_second, pieces = board.to_v
     erb :scene, :locals => {
-      captured_first: captured_first,
-      captured_second: captured_second,
+      captured_first: captured_first.sort,
+      captured_second: captured_second.sort,
       pieces: pieces,
       step: kifu.steps[seq-1],
     }

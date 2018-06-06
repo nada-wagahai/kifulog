@@ -142,24 +142,19 @@ class Kifu::Piece
   private
 
   def cmp(o)
-    t = Kifu::Player::Order
-    if self.captured? && o.captured?
-      a = t.resolve(o.order) <=> t.resolve(self.order)
-      if a == 0
-        t = Kifu::Piece::Type
-        return t.resolve(self.type) <=> t.resolve(o.type)
-      end
-      return a
-    elsif self.captured?
-      return self.order == t::SECOND ? -1 : 1
-    elsif o.captured?
-      return o.order == t::SECOND ? 1 : -1
-    end
-
     py = self.pos.y <=> o.pos.y
     return py if py != 0
 
-    o.pos.x <=> self.pos.x
+    px = self.pos.x <=> o.pos.x
+    return px if px != 0
+
+    t = Kifu::Player::Order
+    ord = t.resolve(self.order) <=> t.resolve(o.order)
+    return ord if ord != 0
+
+    t = Kifu::Piece::Type
+    p t.resolve(o.type) <=> t.resolve(self.type)
+    return t.resolve(self.type) <=> t.resolve(o.type)
   end
 
   def demote!
