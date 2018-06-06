@@ -5,6 +5,7 @@ require 'sinatra/base'
 require './lib/parser'
 require './lib/db/file'
 require './lib/option'
+require './lib/index/file'
 
 def prepare(opt)
   Dir.mkdir opt.data_dir if !Dir.exist? opt.data_dir
@@ -19,13 +20,8 @@ class Server < Sinatra::Base
 
   def self.start(opt)
     @@db = FileDB.new(opt.data_dir + "/db")
-    @@index_file = opt.data_dir + "/index.yaml"
     @@records_dir = opt.data_dir + "/" + opt.records_dir
-    @@index = begin
-      Psych.load_file @@index_file
-    rescue
-      {}
-    end
+    @@index = FileIndex.new(opt.data_dir + "/index.yaml")
     @@synonym = begin
       CSV.read "./synonym"
     rescue
@@ -60,7 +56,7 @@ class Server < Sinatra::Base
   end
 
   get '/' do
-    erb :index, :locals => {:index => @@index.values}
+    erb :index, :locals => {:index => @@index.scan()}
   end
 
   get '/kifu/:id' do
@@ -79,16 +75,6 @@ class Server < Sinatra::Base
     erb :admin
   end
 
-  post '/admin/reindex' do
-    @@index = {}
-    @@db.get_kifu_all.each do |kifu|
-      id = kifu.kifu_id
-      @@index[id] = {id: id, :title => kifu.start_time}
-    end
-    IO.write @@index_file, Psych.dump(@@index)
-    redirect back
-  end
-
   post '/admin/upload' do
     input = params['kifu']
 
@@ -99,18 +85,16 @@ class Server < Sinatra::Base
     IO.write(file, input)
 
     @@db.put_kifu(kifu)
+    @@index.put(kifu)
 
     redirect back
   end
 
   get '/admin/download/:id' do
-    c = @@index[params['id']]
-    not_found if c.nil?
-
-    file = @@records_dir + '/' + c[:id]
+    file = @@records_dir + '/' + params[:id]
     not_found if !File.exist? file
 
-    send_file file, :filename => "kifu-%s.txt" % c[:id]
+    send_file file, :filename => "kifu-%s.txt" % params[:id]
   end
 
   not_found do
