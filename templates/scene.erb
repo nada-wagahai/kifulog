@@ -3,6 +3,11 @@
 <meta charset="UTF-8">
 <title>scene</title>
 <style>
+div.kifu {
+  //float: left;
+  display: inline-block;
+}
+
 table.board {
   border-collapse: collapse;
   border-width: 1px;
@@ -22,25 +27,57 @@ table.board td {
 table.board td.second {
   transform: rotate(180deg);
 }
+
+table.board td.first {
+}
+
+table.board td.step {
+  font-weight: bold;
+}
+
+table.board td.prev {
+  background-color: #E7F1ED;
+}
+
+div.prev_step {
+  float: left;
+}
+
+div.next_step {
+  float: right;
+}
 </style>
 </head>
 <body>
-  <div>指手: <%= step.move %></div>
+<div class="kifu">
+  <div>指手: <%= step.nil? ? "対局開始" : step.move %></div>
   <div>☖持駒: <% captured_second.each do |p| %><%= p.name %><% end %></div>
   <table class="board">
-  <% pieces.each do |rows| %>
+  <% pieces.each_with_index do |rows, y| %>
     <tr>
-    <% rows.each do |p| %>
-      <td<% if p.order == :SECOND %> class="second"<% end %>><%= p.name_fig %></td>
+    <% rows.each_with_index do |p, x| %>
+      <td class="<%= p.order == :SECOND ? "second" : "first" %><% if step.pos.x == 9-x && step.pos.y == y+1 %> step<% end %><% if step.prev.x == 9-x && step.prev.y == y+1 %> prev<% end %>"><%= p.name_fig %></td>
     <% end %>
     </tr>
   <% end %>
   </table>
   <div>☗持駒: <% captured_first.each do |p| %><%= p.name %><% end %></div>
   <div>
-    <% if step.seq > 1 %><a href="<%= step.seq - 1 %>">前</a><% end %>
-    <% if !step.finished %><a href="<%= step.seq + 1 %>">次</a><% end %>
+    <div class="prev_step">
+      <% if step.seq > 1 %><a href="<%= step.seq - 1 %>">前</a><% end %>
+    </div>
+    <div class="next_step">
+      <% if step.nil? %>
+        <a href="1">次</a>
+      <% elsif !step.finished %>
+        <a href="<%= step.seq + 1 %>">次</a>
+      <% end %>
+    </div>
   </div>
+</div>
+
+<div>
   <a href=".">戻る</a>
+</div>
 </body>
 </html>
