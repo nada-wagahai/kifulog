@@ -59,7 +59,7 @@ class Server < Sinatra::Base
     erb :index, :locals => {:index => @@index.scan()}
   end
 
-  get '/kifu/:id' do
+  get '/kifu/:id/' do
     kifu = @@db.get_kifu(params['id'])
     not_found if kifu.nil?
 
@@ -71,6 +71,7 @@ class Server < Sinatra::Base
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
+    seq = params['seq'].to_i
     board_id = kifu.board_ids[params['seq'].to_i]
 
     board = @@db.get_board(board_id)
@@ -81,6 +82,7 @@ class Server < Sinatra::Base
       captured_first: captured_first,
       captured_second: captured_second,
       pieces: pieces,
+      step: kifu.steps[seq-1],
     }
   end
 

@@ -19,11 +19,11 @@
         <td><%= step.seq %></td>
         <td><%= step.move %></td>
         <td><%= step.elapsed_time %></td>
-        <td><a href="./<%= params['id'] %>/<%= step.seq %>">■</a></td>
+        <td><a href="<%= step.seq %>">■</a></td>
       </tr>
     <% end %>
   </table>
-  <a href="../admin/download/<%= kifu.kifu_id %>">download</a>
-  <a href="..">back</a>
+  <a href="../../admin/download/<%= kifu.kifu_id %>">download</a>
+  <a href="../..">back</a>
 </body>
 </html>
