@@ -231,7 +231,7 @@ class Kifu::Step
 
     return str + "投了" if finished
 
-    str << pos.to_code + Kifu::Piece::Type.name(piece)
+    str << pos.to_code + Kifu::Piece::Type.name(piece).tr("王", "玉")
     return str + "打" if putted
     str << "成" if promoted
     str + "(%d%d)" % prev.to_a
@@ -366,6 +366,6 @@ class Kifu::Board
       end
     }
 
-    [captured_first, captured_second, pss]
+    [captured_first.sort, captured_second.sort, pss]
   end
 end
