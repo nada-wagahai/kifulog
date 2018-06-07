@@ -73,16 +73,20 @@ class Server < Sinatra::Base
 
     seq = params['seq'].to_i
     board_id = kifu.board_ids[params['seq'].to_i]
+    step = seq != 0 ? kifu.steps[seq-1] : nil
 
     board = @@db.get_board(board_id)
     not_found if board.nil?
+
+    step_list = @@db.get_step_list(board_id)
 
     captured_first, captured_second, pieces = board.to_v
     erb :scene, :locals => {
       captured_first: captured_first,
       captured_second: captured_second,
       pieces: pieces,
-      step: kifu.steps[seq-1],
+      step: step,
+      steps: step_list.step_ids,
     }
   end
 
@@ -106,7 +110,10 @@ class Server < Sinatra::Base
 
     @@db.put_kifu(kifu)
     @@index.put(kifu)
-    @@db.put_boards(boards)
+    boards.each_with_index do |board, i|
+      @@db.put_board(board)
+      @@db.put_step_list(board.to_key, kifu.kifu_id, kifu.steps[i-1]) if i != 0
+    end
 
     redirect back
   end

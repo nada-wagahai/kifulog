@@ -53,11 +53,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "kifu.Board" do
     repeated :pieces, :message, 1, "kifu.Piece"
   end
-  add_message "kifu.BoardDescription" do
-    optional :board, :message, 1, "kifu.Board"
-    repeated :step_ids, :message, 2, "kifu.BoardDescription.StepId"
+  add_message "kifu.StepList" do
+    repeated :step_ids, :message, 1, "kifu.StepList.StepId"
   end
-  add_message "kifu.BoardDescription.StepId" do
+  add_message "kifu.StepList.StepId" do
     optional :kifu_id, :string, 1
     optional :seq, :int32, 2
     optional :finished, :bool, 3
@@ -81,7 +80,7 @@ module Kifu
   Piece::Type = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Piece.Type").enummodule
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Step").msgclass
   Board = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Board").msgclass
-  BoardDescription = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.BoardDescription").msgclass
-  BoardDescription::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.BoardDescription.StepId").msgclass
+  StepList = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.StepList").msgclass
+  StepList::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.StepList.StepId").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu").msgclass
 end

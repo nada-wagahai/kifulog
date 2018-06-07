@@ -56,7 +56,7 @@ div.next_step {
   <% pieces.each_with_index do |rows, y| %>
     <tr>
     <% rows.each_with_index do |p, x| %>
-      <td class="<%= p.order == :SECOND ? "second" : "first" %><% if step.pos.x == 9-x && step.pos.y == y+1 %> step<% end %><% if step.prev.x == 9-x && step.prev.y == y+1 %> prev<% end %>"><%= p.name_fig %></td>
+      <td class="<%= p.order == :SECOND ? "second" : "first" %><% if !step.nil? && step.pos.x == 9-x && step.pos.y == y+1 %> step<% end %><% if !step.nil? && step.prev.x == 9-x && step.prev.y == y+1 %> prev<% end %>"><%= p.name_fig %></td>
     <% end %>
     </tr>
   <% end %>
@@ -64,7 +64,7 @@ div.next_step {
   <div>☗持駒: <% captured_first.each do |p| %><%= p.name %><% end %></div>
   <div>
     <div class="prev_step">
-      <% if step.seq > 1 %><a href="<%= step.seq - 1 %>">前</a><% end %>
+      <% if !step.nil? && step.seq > 0 %><a href="<%= step.seq - 1 %>">前</a><% end %>
     </div>
     <div class="next_step">
       <% if step.nil? %>
@@ -79,5 +79,11 @@ div.next_step {
 <div>
   <a href=".">戻る</a>
 </div>
+
+<ul>
+  <% steps.each do |step| %>
+    <li><%= step.kifu_id %>: <%= step.seq %>手</li>
+  <% end %>
+</ul>
 </body>
 </html>

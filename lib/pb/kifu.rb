@@ -153,7 +153,6 @@ class Kifu::Piece
     return ord if ord != 0
 
     t = Kifu::Piece::Type
-    p t.resolve(o.type) <=> t.resolve(self.type)
     return t.resolve(self.type) <=> t.resolve(o.type)
   end
 

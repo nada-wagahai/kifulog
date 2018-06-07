@@ -23,8 +23,11 @@ def main(args)
     boards = kifu.boards!
 
     db.put_kifu(kifu)
-    db.put_boards(boards)
     index.put(kifu)
+    boards.each_with_index do |board, i|
+      db.put_board(board)
+      db.put_step_list(board.to_key, kifu.kifu_id, kifu.steps[i-1]) if i != 0
+    end
 
     kifu_id = kifu.kifu_id
     filename = File.basename file

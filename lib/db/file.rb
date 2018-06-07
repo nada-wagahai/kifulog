@@ -13,6 +13,9 @@ class FileDB
 
     @board_file = path + "/board"
     @board_db = load_db(@board_file)
+
+    @step_file = path + "/step"
+    @step_db = load_db(@step_file)
   end
 
   def put_kifu(kifu)
@@ -42,16 +45,22 @@ class FileDB
     save_db(@board_file, @board_db)
   end
 
-  def put_boards(boards)
-    boards.each do |board|
-      @board_db[board.to_key] = Kifu::Board.encode board
-    end
-    save_db(@board_file, @board_db)
-  end
-
   def get_board(board_id)
     bytes = @board_db[board_id]
     bytes.nil? ? nil : Kifu::Board.decode(bytes)
+  end
+
+  def put_step_list(board_id, kifu_id, step)
+    step_list = get_step_list(board_id)
+    step_list.step_ids << Kifu::StepList::StepId.new(kifu_id: kifu_id, seq: step.seq, finished: step.finished)
+
+    @step_db[board_id] = Kifu::StepList.encode step_list
+    save_db(@step_file, @step_db)
+  end
+
+  def get_step_list(board_id)
+    bytes = @step_db[board_id]
+    bytes.nil? ? Kifu::StepList.new() : Kifu::StepList.decode(bytes)
   end
 
   private
