@@ -39,6 +39,14 @@ class Kifu::Kifu
     Time.at end_ts
   end
 
+  def first_players
+    players.select {|p| p.order == :FIRST }
+  end
+
+  def second_players
+    players.select {|p| p.order == :SECOND }
+  end
+
   def first_players_name
     players_name(players.select {|p| p.order == :FIRST })
   end
@@ -200,6 +208,24 @@ module Kifu::Piece::Type
   end
 end
 
+class Kifu::Player
+  @@synonym = []
+
+  def self.synonym=(s)
+    @@synonym = s
+  end
+
+  def masked_name
+    mask(self.name)
+  end
+
+  private
+
+  def mask(n)
+    @@synonym.find(proc { ["", "*****"] }) {|s| s[0] == n }[1]
+  end
+end
+
 module Kifu::Player::Order
   def self.label(sym)
     case sym
@@ -225,8 +251,12 @@ module Kifu::Player::Order
 end
 
 class Kifu::Step
+  def player_label
+    Kifu::Player::Order.label(self.player)
+  end
+
   def move
-    str = Kifu::Player::Order.label(self.player)
+    str = player_label
 
     return str + "投了" if finished
 

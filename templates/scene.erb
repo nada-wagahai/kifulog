@@ -50,7 +50,13 @@ div.next_step {
 </head>
 <body>
 <div class="kifu">
-  <div>指手: <%= step.nil? ? "対局開始" : step.move %></div>
+  <div>
+  <%= kifu.first_players.map {|p| p.masked_name}.join(", ") %> vs. <%= kifu.second_players.map {|p| p.masked_name}.join(", ") %>
+  </div>
+  <div>
+    <%= step.nil? ? "対局開始" : step.finished ? "終局" : "%d手" % step.seq %>:
+    <%= step.nil? ? "" : step.move %>
+  </div>
   <div>☖持駒: <% captured_second.each do |p| %><%= p.name %><% end %></div>
   <table class="board">
   <% pieces.each_with_index do |rows, y| %>
@@ -80,10 +86,13 @@ div.next_step {
   <a href=".">戻る</a>
 </div>
 
-<ul>
-  <% steps.each do |step| %>
-    <li><%= step.kifu_id %>: <%= step.seq %>手</li>
-  <% end %>
-</ul>
+<div>
+  <div>同一局面</div>
+  <ul>
+    <% steps.each do |step| %>
+      <li><a href="../<%= step[0].kifu_id %>/<%= step[0].seq %>"><%= step[1].start_time %>: <%= step[0].seq %>手</a></li>
+    <% end %>
+  </ul>
+</div>
 </body>
 </html>

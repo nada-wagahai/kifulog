@@ -22,11 +22,14 @@ class Server < Sinatra::Base
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
     @@index = FileIndex.new(opt.data_dir + "/index.yaml")
-    @@synonym = begin
+
+    synonym = begin
       CSV.read "./synonym"
     rescue
       []
     end
+    Kifu::Player.synonym = synonym
+
     @@credentials = begin
       CSV.read "./credentials"
     rescue
@@ -63,7 +66,6 @@ class Server < Sinatra::Base
     kifu = @@db.get_kifu(params['id'])
     not_found if kifu.nil?
 
-    kifu.synonym = @@synonym
     erb :kifu, :locals => {kifu: kifu, params: params}
   end
 
@@ -72,21 +74,23 @@ class Server < Sinatra::Base
     not_found if kifu.nil?
 
     seq = params['seq'].to_i
-    board_id = kifu.board_ids[params['seq'].to_i]
     step = seq != 0 ? kifu.steps[seq-1] : nil
+    board_id = kifu.board_ids[seq]
 
     board = @@db.get_board(board_id)
     not_found if board.nil?
 
     step_list = @@db.get_step_list(board_id)
+    kifu_list = @@db.batch_get_kifu(step_list.step_ids.map{|s|s.kifu_id})
 
     captured_first, captured_second, pieces = board.to_v
     erb :scene, :locals => {
       captured_first: captured_first,
       captured_second: captured_second,
       pieces: pieces,
+      kifu: kifu,
       step: step,
-      steps: step_list.step_ids,
+      steps: step_list.step_ids.zip(kifu_list),
     }
   end
 

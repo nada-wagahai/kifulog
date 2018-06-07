@@ -32,6 +32,14 @@ class FileDB
     end
   end
 
+  def batch_get_kifu(ids)
+    ret = []
+    ids.each do |id|
+      ret << get_kifu(id)
+    end
+    ret
+  end
+
   def get_kifu_all
     @kifu_db.values.map {|bytes|
       Kifu::Kifu.decode bytes
