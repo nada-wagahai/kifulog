@@ -81,7 +81,12 @@ class Server < Sinatra::Base
     not_found if board.nil?
 
     step_list = @@db.get_step_list(board_id)
-    kifu_list = @@db.batch_get_kifu(step_list.step_ids.map{|s|s.kifu_id})
+    kifu_ids = step_list.step_ids.map {|s|
+      s.kifu_id
+    }.select {|kifu_id|
+      kifu_id != params['kifu_id']
+    }
+    kifu_list = @@db.batch_get_kifu(kifu_ids)
 
     captured_first, captured_second, pieces = board.to_v
     erb :scene, :locals => {
