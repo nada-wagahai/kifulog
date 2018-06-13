@@ -5,7 +5,7 @@ require 'sinatra/base'
 require './lib/parser'
 require './lib/db/file'
 require './lib/option'
-require './lib/index/file'
+require './lib/index/es'
 
 def prepare(opt)
   Dir.mkdir opt.data_dir if !Dir.exist? opt.data_dir
@@ -21,7 +21,7 @@ class Server < Sinatra::Base
   def self.start(opt)
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
-    @@index = FileIndex.new(opt.data_dir + "/index.yaml")
+    @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, log: opt.es_log)
 
     synonym = begin
       CSV.read "./synonym"
@@ -44,6 +44,10 @@ class Server < Sinatra::Base
     run! options
   end
 
+  before do
+    request.script_name = "/test1"
+  end
+
   helpers do
     def authorize
       unless authorized?
@@ -59,12 +63,21 @@ class Server < Sinatra::Base
   end
 
   get '/' do
-    erb :index, :locals => {:index => @@index.scan()}
+    ids = @@index.search_kifu()
+    ks = @@db.batch_get_kifu(ids)
+    index = ids.zip(ks).map { |id, kifu|
+      {id: id, title: kifu.start_time}
+    }
+    erb :index, :locals => {:index => index }
   end
 
   get '/kifu/:id/' do
     kifu = @@db.get_kifu(params['id'])
     not_found if kifu.nil?
+
+    if !kifu.alias.empty?
+      redirect to('/kifu/%s/' % kifu.alias)
+    end
 
     erb :kifu, :locals => {kifu: kifu, params: params}
   end
@@ -73,6 +86,10 @@ class Server < Sinatra::Base
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
+    if !kifu.alias.empty?
+      redirect to('/kifu/%s/%s' % [kifu.alias, params['seq']])
+    end
+
     seq = params['seq'].to_i
     step = seq != 0 ? kifu.steps[seq-1] : nil
     board_id = kifu.board_ids[seq]
@@ -80,8 +97,8 @@ class Server < Sinatra::Base
     board = @@db.get_board(board_id)
     not_found if board.nil?
 
-    step_list = @@db.get_step_list(board_id)
-    step_ids = step_list.step_ids.select {|step_id|
+    steps = @@index.search_step(board_id)
+    step_ids = steps.select {|step_id|
       step_id.kifu_id != params['kifu_id']
     }
     kifu_list = @@db.batch_get_kifu(step_ids.map {|s| s.kifu_id })
@@ -119,7 +136,6 @@ class Server < Sinatra::Base
     @@index.put(kifu)
     boards.each_with_index do |board, i|
       @@db.put_board(board)
-      @@db.put_step_list(board.to_key, kifu.kifu_id, kifu.steps[i-1]) if i != 0
     end
 
     redirect back

@@ -1,3 +1,6 @@
+require './proto/kifu_pb'
+require './lib/pb'
+
 class FileDB
   require 'psych'
 
@@ -19,7 +22,13 @@ class FileDB
   end
 
   def put_kifu(kifu)
-    @kifu_db[kifu.kifu_id] = Kifu::Kifu.encode kifu
+    @kifu_db[kifu.id] = Kifu::Kifu.encode kifu
+    save_db(@kifu_file, @kifu_db)
+  end
+
+  def put_kifu_alias(target_id, alias_id)
+    kifu = Kifu::Kifu.new(alias: alias_id)
+    @kifu_db[target_id] = Kifu::Kifu.encode kifu
     save_db(@kifu_file, @kifu_db)
   end
 
@@ -50,6 +59,13 @@ class FileDB
 
   def put_board(board)
     @board_db[board.to_key] = Kifu::Board.encode board
+    save_db(@board_file, @board_db)
+  end
+
+  def put_boards(boards)
+    boards.each do |board|
+      @board_db[board.to_key] = Kifu::Board.encode board
+    end
     save_db(@board_file, @board_db)
   end
 

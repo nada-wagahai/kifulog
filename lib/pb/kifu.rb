@@ -1,5 +1,6 @@
 require 'digest'
 require './proto/kifu_pb'
+require './proto/index_pb'
 
 class Kifu::Kifu
   def synonym
@@ -58,6 +59,23 @@ class Kifu::Kifu
   def kifu_id
     str = players.map {|p| p.name}.join("-")
     "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
+  end
+
+  def id
+    vs = players.map {|p| p.name}.join("-")
+    str = "%d:%s" % [start_ts, vs]
+    Digest::MD5.hexdigest(str)
+  end
+
+  def to_index
+    Index::Kifu.new(
+      id: self.id,
+      first_players: self.first_players.map {|p| p.name},
+      second_players: self.second_players.map {|p| p.name},
+      start_ts: self.start_ts,
+      end_ts: self.end_ts,
+      board_ids: self.board_ids.to_a,
+    )
   end
 
   private
