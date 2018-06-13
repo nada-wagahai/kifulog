@@ -19,6 +19,7 @@ class Server < Sinatra::Base
   require 'csv'
 
   def self.start(opt)
+    @@script_name = opt.script_name
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
     @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, log: opt.es_log)
@@ -45,7 +46,7 @@ class Server < Sinatra::Base
   end
 
   before do
-    request.script_name = "/test1"
+    request.script_name = @@script_name
   end
 
   helpers do

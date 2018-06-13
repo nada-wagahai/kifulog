@@ -1,7 +1,7 @@
 require 'optparse'
 
 class Option
-  attr_accessor :port, :data_dir, :records_dir
+  attr_accessor :port, :script_name, :data_dir, :records_dir
   attr_accessor :kifu_index, :step_index, :es_log
 
   def initialize(args)
@@ -19,6 +19,12 @@ class Option
     opt.on('--port=PORT', 'default: %d' % port) {|v|
       @port = v.to_i
     }
+
+    @script_name = "/"
+    opt.on('--script-name=NAME', 'default: %s' % script_name) {|v|
+      @script_name = v
+    }
+
   end
 
   def registerFile(opt)
