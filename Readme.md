@@ -8,16 +8,20 @@
 
 ### environment
 
-* Rubyとgemをインストールしておく。
+* Softwares
+  * Ruby 2.4.1
+  * gem 2.6.14
+  * bundler 1.16.2
+  * protoc 3.2.0
+  * Elasticsearch 6.2.4
 * Elasticsearchを立てる。(localhost:9200)
   * `docker　run -p 9200:9200 ...` とかでよい。バックアップも何も要らない
 
 ```
 git clone git@github.com:nada-wagahai/kifulog.git
 cd kifulog
-gem install sinatra
-gem install elasticsearch
-./server.rb
+bundle install --path vendor/bundle
+bundle exec ./server.rb
 ```
 
 これだけでなんかやってくれる気がする。
