@@ -60,14 +60,14 @@ class Server < Sinatra::Base
       account_ids = @@index.search_accounts(player_ids)
       accounts = @@db.batch_get_account(account_ids)
 
-      @player_map = Hash.new "*****"
+      @player_map = {}
       accounts.each do |account|
         @player_map[account.player_id] = account.name
       end
     end
 
     def mask(name)
-      @player_map[name]
+      @player_map.fetch(name) {|key| login? ? key : "*****" }
     end
   end
 
