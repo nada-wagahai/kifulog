@@ -1,4 +1,5 @@
 require './proto/kifu_pb'
+require './proto/account_pb'
 require './lib/pb'
 
 class FileDB
@@ -19,6 +20,12 @@ class FileDB
 
     @step_file = path + "/step"
     @step_db = load_db(@step_file)
+
+    @account_file = path + "/account"
+    @account_db = load_db(@account_file)
+
+    @session_file = path + "/session"
+    @session_db = load_db(@session_file)
   end
 
   def put_kifu(kifu)
@@ -85,6 +92,26 @@ class FileDB
   def get_step_list(board_id)
     bytes = @step_db[board_id]
     bytes.nil? ? Kifu::StepList.new() : Kifu::StepList.decode(bytes)
+  end
+
+  def put_account(account)
+    @account_db[account.id] = Account::Account.encode account
+    save_db(@account_file, @account_db)
+  end
+
+  def get_account(account_id)
+    bytes = @account_db[account_id]
+    bytes.nil? ? nil : Account::Account.decode(bytes)
+  end
+
+  def put_session(session)
+    @session_db[session.id] = Account::Session.encode session
+    save_db(@session_file, @session_db)
+  end
+
+  def get_session(session_id)
+    bytes = @session_db[session_id]
+    bytes.nil? ? nil : Account::Session.decode(bytes)
   end
 
   private

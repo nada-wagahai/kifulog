@@ -9,8 +9,8 @@
   <dt>終了日時</dt><dd><%= kifu.end_time %></dd>
   <dt>手割合</dt><dd><%= kifu.handicap %></dd>
   <dt>棋戦</dt><dd><%= kifu.game_name %></dd>
-  <dt>先手</dt><dd><%= kifu.first_players.map {|p| p.masked_name}.join(", ") %></dd>
-  <dt>後手</dt><dd><%= kifu.second_players.map {|p| p.masked_name}.join(", ") %></dd>
+  <dt>先手</dt><dd><%= kifu.first_players.map {|p| mask(p.name)}.join(", ") %></dd>
+  <dt>後手</dt><dd><%= kifu.second_players.map {|p| mask(p.name)}.join(", ") %></dd>
   </dl>
   <table>
     <tr><th>手数</th><th>指手</th><th>消費時間</th><th></th></tr>

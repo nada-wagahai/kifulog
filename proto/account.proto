@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package account;
+
+enum Role {
+  ADMIN = 0;
+}
+
+message Account {
+  string id = 1;
+  string hashed_password = 2;
+  Role role = 3;
+  string player_id = 4; // 24 account
+  string name = 5;
+}
+
+message Session {
+  string id = 1;
+  string account_id = 2;
+  int64 created_at = 3;
+  Role role = 4;
+}

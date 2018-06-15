@@ -55,16 +55,15 @@ oga_ttsu,おがた
 
 ## Admin
 
-### Credentials
+### User & login
 
-アップロードなどadmin機能にアクセスするにはカレントディレクトリに `credentials` ファイルを置く。
+ユーザーアカウントを作るといろいろできる(予定)。role=ADMINのユーザは管理機能にアクセスできる。ユーザは以下のスクリプトで作る。
 
-内容はCSVでBasic認証のユーザとパスワードを平文で `user,password` の形式で置くだけ。
-
-例)
 ```
-nada,wagahai
+./scripts/account.rb
 ```
+
+ログインは `/login` にアクセスするとできる。
 
 ### Upload
 

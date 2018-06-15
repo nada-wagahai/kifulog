@@ -52,7 +52,7 @@ div.next_step {
 <div><a href="../..">棋譜一覧</a></div>
 <div class="kifu">
   <div>
-  ☗<%= kifu.first_players.map {|p| p.masked_name}.join(", ") %> - ☖<%= kifu.second_players.map {|p| p.masked_name}.join(", ") %>
+  ☗<%= kifu.first_players.map {|p| mask(p.name)}.join(", ") %> - ☖<%= kifu.second_players.map {|p| mask(p.name)}.join(", ") %>
   </div>
   <div>
     <%= step.nil? ? "対局開始" : step.finished ? "終局" : "%d手" % step.seq %>:

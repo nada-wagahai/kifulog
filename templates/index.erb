@@ -9,6 +9,11 @@
     <li><a href="kifu/<%= c[:id] %>/"><%= c[:title] %></a></li>
   <% end %>
 </ol>
+<% if !session.nil? %>
+<a href="logout">logout</a>
+<% if session.role == :ADMIN %>
 <a href="admin">admin</a>
+<% end %>
+<% end %>
 </body>
 </html>

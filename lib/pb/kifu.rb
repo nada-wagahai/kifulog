@@ -3,15 +3,6 @@ require './proto/kifu_pb'
 require './proto/index_pb'
 
 class Kifu::Kifu
-  def synonym
-    return {} if @synonym.nil?
-    @synonym
-  end
-
-  def synonym=(syn)
-    @synonym = syn
-  end
-
   def normalize!
     t = Kifu::Player::Order
     players.sort! {|a, b| t.resolve(a.order) <=> t.resolve(b.order) }
@@ -48,14 +39,6 @@ class Kifu::Kifu
     players.select {|p| p.order == :SECOND }
   end
 
-  def first_players_name
-    players_name(players.select {|p| p.order == :FIRST })
-  end
-
-  def second_players_name
-    players_name(players.select {|p| p.order == :SECOND })
-  end
-
   def kifu_id
     str = players.map {|p| p.name}.join("-")
     "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
@@ -76,16 +59,6 @@ class Kifu::Kifu
       end_ts: self.end_ts,
       board_ids: self.board_ids.to_a,
     )
-  end
-
-  private
-
-  def mask(name)
-    synonym.find(proc { ["", "*****"] }) {|s| s[0] == name }[1]
-  end
-
-  def players_name(ps)
-    ps.map {|p| mask(p.name) }.join(", ")
   end
 end
 
@@ -227,12 +200,6 @@ module Kifu::Piece::Type
 end
 
 class Kifu::Player
-  @@synonym = []
-
-  def self.synonym=(s)
-    @@synonym = s
-  end
-
   def masked_name
     mask(self.name)
   end
@@ -240,7 +207,7 @@ class Kifu::Player
   private
 
   def mask(n)
-    @@synonym.find(proc { ["", "*****"] }) {|s| s[0] == n }[1]
+    [].find(proc { ["", "*****"] }) {|s| s[0] == n }[1]
   end
 end
 

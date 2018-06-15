@@ -1,6 +1,12 @@
 #!/usr/bin/env ruby
 
 require 'sinatra/base'
+require 'sinatra/cookies'
+require 'base64'
+require 'bcrypt'
+
+require './proto/kifu_pb'
+require './proto/account_pb'
 
 require './lib/parser'
 require './lib/db/file'
@@ -18,21 +24,17 @@ class Server < Sinatra::Base
   require 'psych'
   require 'csv'
 
+  helpers Sinatra::Cookies
+
   def self.start(opt)
+    @@random = Random.new
     @@script_name = opt.script_name
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
     @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, log: opt.es_log)
 
-    synonym = begin
+    @@synonym = begin
       CSV.read "./synonym"
-    rescue
-      []
-    end
-    Kifu::Player.synonym = synonym
-
-    @@credentials = begin
-      CSV.read "./credentials"
     rescue
       []
     end
@@ -50,29 +52,34 @@ class Server < Sinatra::Base
   end
 
   helpers do
-    def authorize
-      unless authorized?
-        response['WWW-Authenticate'] = %(Basic realm="Restricted Area")
-        throw(:halt, [401, "Not authorized\n"])
-      end
+    def authorize!
+      session_id = cookies[:session_id]
+      @session = @@db.get_session(session_id)
     end
 
-    def authorized?
-      @auth ||= Rack::Auth::Basic::Request.new(request.env)
-      @auth.provided? && @auth.basic? && @auth.credentials && @@credentials.include?(@auth.credentials)
+    def mask(name)
+      n = @session.nil? ? "*****" : name
+      @@synonym.find(proc { ["", n] }) {|s| s[0] == name }[1]
     end
   end
 
   get '/' do
+    authorize!
+
     ids = @@index.search_kifu()
     ks = @@db.batch_get_kifu(ids)
     index = ids.zip(ks).map { |id, kifu|
       {id: id, title: kifu.start_time}
     }
-    erb :index, :locals => {:index => index }
+    erb :index, :locals => {
+      index: index,
+      session: @session,
+    }
   end
 
   get '/kifu/:id/' do
+    authorize!
+
     kifu = @@db.get_kifu(params['id'])
     not_found if kifu.nil?
 
@@ -80,10 +87,16 @@ class Server < Sinatra::Base
       redirect to('/kifu/%s/' % kifu.alias)
     end
 
-    erb :kifu, :locals => {kifu: kifu, params: params}
+    erb :kifu, :locals => {
+      kifu: kifu,
+      params: params,
+      session: @session,
+    }
   end
 
   get '/kifu/:kifu_id/:seq' do
+    authorize!
+
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
@@ -115,8 +128,50 @@ class Server < Sinatra::Base
     }
   end
 
-  before '/admin*' do
-    authorize
+  get '/login' do
+    token = Base64.encode64 @@random.bytes(39)
+    cookies[:token] = token.chomp
+    erb :login, :locals => {
+      token: token,
+    }
+  end
+
+  post '/login' do
+    halt 401, "Unauthorized" if cookies[:token] != params["token"].chomp
+
+    account = @@db.get_account(params["id"])
+    halt 401, "Unauthorized" if account.nil?
+
+    password = BCrypt::Password.new(account.hashed_password)
+    halt 401, "Unauthorized" unless password == params["password"].chomp
+
+    session_id = Base64.encode64(@@random.bytes(39)).chomp
+    session = Account::Session.new(
+      id: session_id,
+      account_id: account.id,
+      created_at: Time.now.to_i,
+      role: account.role,
+    )
+    @@db.put_session(session)
+    cookies[:session_id] = session_id
+
+    redirect to("/")
+  end
+
+  get '/logout' do
+    authorize!
+
+    if !@session.nil?
+      cookies[:session_id] = nil
+    end
+
+    redirect to("/")
+  end
+
+  before "/admin*" do
+    authorize!
+
+    not_found if @session.nil? || @session.role != :ADMIN
   end
 
   get '/admin' do
