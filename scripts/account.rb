@@ -3,6 +3,7 @@
 require 'bcrypt'
 
 require './lib/db/file'
+require './lib/index/es'
 require './lib/option'
 require './proto/account_pb'
 
@@ -30,7 +31,15 @@ def main(args)
   )
 
   db = FileDB.new(opt.data_dir + "/db")
+  index = EsIndex.new(
+    kifu_index: opt.kifu_index,
+    step_index: opt.step_index,
+    account_index: opt.account_index,
+    log: opt.es_log,
+  )
+
   db.put_account(acc)
+  index.put_account(acc)
   puts "SUCCESSS"
 end
 

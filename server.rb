@@ -31,7 +31,7 @@ class Server < Sinatra::Base
     @@script_name = opt.script_name
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
-    @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, log: opt.es_log)
+    @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, account_index: opt.account_index, log: opt.es_log)
 
     options = {
       :views => 'templates',
