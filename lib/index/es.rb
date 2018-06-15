@@ -9,6 +9,7 @@ class EsIndex
   def initialize(opt)
     @kifu_index = opt[:kifu_index]
     @step_index = opt[:step_index]
+    @account_index = opt[:account_index]
     @client = Elasticsearch::Client.new log: opt[:log]
   end
 
@@ -33,7 +34,11 @@ class EsIndex
   def search_kifu()
     query = {
       query: {
-        match_all: {},
+        bool: {
+          must_not: {
+            exists: { field: "alias" },
+          },
+        },
       },
       size: 100,
       sort: [
@@ -47,7 +52,7 @@ class EsIndex
   def search_step(board_id)
     query = {
       query: {
-        match: {boardId: board_id},
+        match: { boardId: board_id },
       },
       size: 100,
       sort: [
@@ -58,5 +63,24 @@ class EsIndex
     res['hits']['hits'].map {|doc|
       Index::Step::StepId.decode_base64 doc['_id']
     }
+  end
+
+  def put_account(account)
+    account_doc = Index::Account.new(
+      id: account.id,
+      player_id: account.player_id,
+    )
+    @client.index index: @account_index, type: "account", id: account.id, body: account_doc.to_json
+  end
+
+  def search_accounts(player_ids)
+    query = {
+      query: {
+        match: { playerId: player_ids.join(" ") },
+      },
+      size: 100,
+    }
+    res = @client.search index: @account_index, body: query
+    res['hits']['hits'].map {|doc| doc['_id'] }
   end
 end

@@ -59,8 +59,6 @@ class FileDB
   def get_kifu_all
     @kifu_db.values.map {|bytes|
       Kifu::Kifu.decode bytes
-    }.sort {|a, b|
-      a.start_ts <=> b.start_ts
     }
   end
 
@@ -102,6 +100,20 @@ class FileDB
   def get_account(account_id)
     bytes = @account_db[account_id]
     bytes.nil? ? nil : Account::Account.decode(bytes)
+  end
+
+  def batch_get_account(account_ids)
+    ret = []
+    account_ids.each do |account_id|
+      ret << get_account(account_id)
+    end
+    ret
+  end
+
+  def get_accounts_all()
+    @account_db.values.map {|bytes|
+      Account::Account.decode bytes
+    }
   end
 
   def put_session(session)

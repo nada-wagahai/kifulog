@@ -58,6 +58,7 @@ class Kifu::Kifu
       start_ts: self.start_ts,
       end_ts: self.end_ts,
       board_ids: self.board_ids.to_a,
+      alias: !self.alias.empty?,
     )
   end
 end

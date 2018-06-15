@@ -33,12 +33,6 @@ class Server < Sinatra::Base
     @@records_dir = opt.data_dir + "/" + opt.records_dir
     @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, log: opt.es_log)
 
-    @@synonym = begin
-      CSV.read "./synonym"
-    rescue
-      []
-    end
-
     options = {
       :views => 'templates',
       :bind => '127.0.0.1',
@@ -57,9 +51,23 @@ class Server < Sinatra::Base
       @session = @@db.get_session(session_id)
     end
 
+    def login?
+      !@session.nil?
+    end
+
+    def player_map(kifu)
+      player_ids = kifu.players.map {|p| p.name }
+      account_ids = @@index.search_accounts(player_ids)
+      accounts = @@db.batch_get_account(account_ids)
+
+      @player_map = Hash.new "*****"
+      accounts.each do |account|
+        @player_map[account.player_id] = account.name
+      end
+    end
+
     def mask(name)
-      n = @session.nil? ? "*****" : name
-      @@synonym.find(proc { ["", n] }) {|s| s[0] == name }[1]
+      @player_map[name]
     end
   end
 
@@ -87,6 +95,8 @@ class Server < Sinatra::Base
       redirect to('/kifu/%s/' % kifu.alias)
     end
 
+    player_map(kifu)
+
     erb :kifu, :locals => {
       kifu: kifu,
       params: params,
@@ -103,6 +113,8 @@ class Server < Sinatra::Base
     if !kifu.alias.empty?
       redirect to('/kifu/%s/%s' % [kifu.alias, params['seq']])
     end
+
+    player_map(kifu)
 
     seq = params['seq'].to_i
     step = seq != 0 ? kifu.steps[seq-1] : nil

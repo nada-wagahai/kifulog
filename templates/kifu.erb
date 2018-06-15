@@ -29,7 +29,9 @@
       </tr>
     <% end %>
   </table>
+  <% if login? %>
   <a href="../../admin/download/<%= kifu.kifu_id %>">元データ</a>
+  <% end %>
   <a href="../..">棋譜一覧</a>
 </body>
 </html>

@@ -11,6 +11,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :start_ts, :int64, 4
     optional :end_ts, :int64, 5
     repeated :board_ids, :string, 6
+    optional :alias, :bool, 7
   end
   add_message "index.Step" do
     optional :id, :message, 1, "index.Step.StepId"
@@ -22,10 +23,15 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :seq, :int32, 2
     optional :finished, :bool, 3
   end
+  add_message "index.Account" do
+    optional :id, :string, 1
+    optional :player_id, :string, 2
+  end
 end
 
 module Index
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Kifu").msgclass
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step").msgclass
   Step::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step.StepId").msgclass
+  Account = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Account").msgclass
 end
