@@ -129,14 +129,16 @@ class Server < Sinatra::Base
     }
     kifu_list = @@db.batch_get_kifu(step_ids.map {|s| s.kifu_id })
 
+    steps = step_ids.zip(kifu_list)
     captured_first, captured_second, pieces = board.to_v
+
     erb :scene, :locals => {
       captured_first: captured_first,
       captured_second: captured_second,
       pieces: pieces,
       kifu: kifu,
       step: step,
-      steps: step_ids.zip(kifu_list),
+      steps: steps,
     }
   end
 
