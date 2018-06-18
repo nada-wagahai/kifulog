@@ -196,7 +196,7 @@ class Server < Sinatra::Base
     @@db.put_comment(comment)
     @@index.put_comment(comment)
 
-    redirect back
+    redirect to("/kifu/%s/%s" % [params['kifu_id'], params['seq']])
   end
 
   get '/login' do
