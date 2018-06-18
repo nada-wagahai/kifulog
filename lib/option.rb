@@ -2,7 +2,7 @@ require 'optparse'
 
 class Option
   attr_accessor :port, :script_name, :data_dir, :records_dir
-  attr_accessor :kifu_index, :step_index, :account_index, :es_log
+  attr_accessor :kifu_index, :step_index, :account_index, :comment_index, :es_log
 
   def initialize(args)
     opt = OptionParser.new
@@ -53,6 +53,11 @@ class Option
     @account_index = "account_dev"
     opt.on('--account-index=INDEX', 'default: %s' % account_index) {|v|
       @account_index = v
+    }
+
+    @comment_index = "comment_dev"
+    opt.on('--comment-index=INDEX', 'default: %s' % comment_index) {|v|
+      @comment_index = v
     }
 
     @es_log = false

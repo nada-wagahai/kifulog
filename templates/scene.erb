@@ -100,5 +100,18 @@ div.next_step {
   </ul>
 </div>
 <% end %>
+
+<% if login? %>
+  Comments:
+<ul>
+  <% comments.each do |comment| %>
+  <li><%= comment.text %></li>
+  <% end %>
+</ul>
+<form action="<%= "%s/comment" % params['seq'] %>" method="POST">
+<textarea name="comment"></textarea>
+<input type="submit"/>
+</form>
+<% end %>
 </body>
 </html>

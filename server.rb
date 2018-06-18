@@ -4,9 +4,11 @@ require 'sinatra/base'
 require 'sinatra/cookies'
 require 'base64'
 require 'bcrypt'
+require 'securerandom'
 
 require './proto/kifu_pb'
 require './proto/account_pb'
+require './proto/comment_pb'
 
 require './lib/parser'
 require './lib/pb'
@@ -32,7 +34,13 @@ class Server < Sinatra::Base
     @@script_name = opt.script_name
     @@db = FileDB.new(opt.data_dir + "/db")
     @@records_dir = opt.data_dir + "/" + opt.records_dir
-    @@index = EsIndex.new(kifu_index: opt.kifu_index, step_index: opt.step_index, account_index: opt.account_index, log: opt.es_log)
+    @@index = EsIndex.new(
+      kifu_index: opt.kifu_index,
+      step_index: opt.step_index,
+      account_index: opt.account_index,
+      comment_index: opt.comment_index,
+      log: opt.es_log,
+    )
 
     options = {
       :views => 'templates',
@@ -145,6 +153,12 @@ class Server < Sinatra::Base
     steps = step_ids.zip(kifu_list)
     captured_first, captured_second, pieces = board.to_v
 
+    p params
+    p board_id
+    comment_ids = @@index.search_comment(board_id: board_id)
+    p comment_ids
+    comments = @@db.batch_get_comments(comment_ids)
+
     erb :scene, :locals => {
       captured_first: captured_first,
       captured_second: captured_second,
@@ -152,7 +166,40 @@ class Server < Sinatra::Base
       kifu: kifu,
       step: step,
       steps: steps,
+      comments: comments,
     }
+  end
+
+  post '/kifu/:kifu_id/:seq/comment' do
+    authorize!
+    not_found if !login?
+
+    kifu = @@db.get_kifu(params['kifu_id'])
+    not_found if kifu.nil?
+
+    if !kifu.alias.empty?
+      redirect to('/kifu/%s/%s' % [kifu.alias, params['seq']])
+    end
+
+    seq = params['seq'].to_i
+    board_id = kifu.board_ids[seq]
+
+    timestamp = (Time.now.to_f * 1000).to_i
+    comment = Comment::Comment.new(
+      id: SecureRandom.uuid,
+      owner_id: @session.account_id,
+      text: params['comment'],
+      created_ms: timestamp,
+      updated_ms: timestamp,
+      board_id: board_id,
+      kifu_id: params['kifu_id'],
+      seq: seq,
+    )
+
+    @@db.put_comment(comment)
+    @@index.put_comment(comment)
+
+    redirect back
   end
 
   get '/login' do

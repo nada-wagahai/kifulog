@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package comment;
+
+message Comment {
+  string id = 1;
+  string owner_id = 2;
+  string text = 3;
+  int64 created_ms = 4;
+  int64 updated_ms = 5;
+  string board_id = 6;
+  string kifu_id = 7;
+  int32 seq = 8;
+}

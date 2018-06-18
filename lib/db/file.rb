@@ -26,6 +26,9 @@ class FileDB
 
     @session_file = path + "/session"
     @session_db = load_db(@session_file)
+
+    @comment_file = path + "/comment"
+    @comment_db = load_db(@comment_file)
   end
 
   def put_kifu(kifu)
@@ -124,6 +127,17 @@ class FileDB
   def get_session(session_id)
     bytes = @session_db[session_id]
     bytes.nil? ? nil : Account::Session.decode(bytes)
+  end
+
+  def put_comment(comment)
+    @comment_db[comment.id] = Comment::Comment.encode comment
+    save_db(@comment_file, @comment_db)
+  end
+
+  def batch_get_comments(comment_ids)
+    @comment_db.values_at(*comment_ids).map { |bytes|
+      bytes.nil? ? nil : Comment::Comment.decode(bytes)
+    }
   end
 
   private

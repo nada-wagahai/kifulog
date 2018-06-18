@@ -27,3 +27,11 @@ message Account {
   string id = 1;
   string player_id = 2;
 }
+
+message Comment {
+  string id = 1;
+  string owner_id = 2;
+  int64 created_ms = 3;
+  string board_id = 4;
+  string kifu_id = 5;
+}

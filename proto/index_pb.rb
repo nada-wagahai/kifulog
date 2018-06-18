@@ -27,6 +27,13 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :id, :string, 1
     optional :player_id, :string, 2
   end
+  add_message "index.Comment" do
+    optional :id, :string, 1
+    optional :owner_id, :string, 2
+    optional :created_ms, :int64, 3
+    optional :board_id, :string, 4
+    optional :kifu_id, :string, 5
+  end
 end
 
 module Index
@@ -34,4 +41,5 @@ module Index
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step").msgclass
   Step::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step.StepId").msgclass
   Account = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Account").msgclass
+  Comment = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Comment").msgclass
 end

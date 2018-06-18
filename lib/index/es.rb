@@ -10,6 +10,7 @@ class EsIndex
     @kifu_index = opt[:kifu_index]
     @step_index = opt[:step_index]
     @account_index = opt[:account_index]
+    @comment_index = opt[:comment_index]
     @client = Elasticsearch::Client.new log: opt[:log]
   end
 
@@ -81,6 +82,33 @@ class EsIndex
       size: 100,
     }
     res = @client.search index: @account_index, body: query
+    res['hits']['hits'].map {|doc| doc['_id'] }
+  end
+
+  def put_comment(comment)
+    doc = Index::Comment.new(
+      id: comment.id,
+      owner_id: comment.owner_id,
+      created_ms: comment.created_ms,
+      board_id: comment.board_id,
+      kifu_id: comment.kifu_id,
+    )
+    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json
+  end
+
+  def search_comment(params)
+    return [] unless @client.indices.exists index: @comment_index
+
+    query = {
+      query: {
+        match: { boardId: params[:board_id] },
+      },
+      size: 100,
+      sort: [
+        { createdMs: "asc" },
+      ],
+    }
+    res = @client.search index: @comment_index, body: query
     res['hits']['hits'].map {|doc| doc['_id'] }
   end
 end
