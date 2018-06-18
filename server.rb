@@ -9,6 +9,7 @@ require './proto/kifu_pb'
 require './proto/account_pb'
 
 require './lib/parser'
+require './lib/pb'
 require './lib/db/file'
 require './lib/option'
 require './lib/index/es'
@@ -55,8 +56,10 @@ class Server < Sinatra::Base
       !@session.nil?
     end
 
-    def player_map(kifu)
-      player_ids = kifu.players.map {|p| p.name }
+    def player_map(kifus)
+      player_ids = kifus.map{|kifu|
+        kifu.players.map {|p| p.name }
+      }.flatten
       account_ids = @@index.search_accounts(player_ids)
       accounts = @@db.batch_get_account(account_ids)
 
@@ -69,6 +72,15 @@ class Server < Sinatra::Base
     def mask(name)
       @player_map.fetch(name) {|key| login? ? key : "*****" }
     end
+
+    def title(kifu)
+      date = kifu.start_time.strftime("%Y/%m/%d %R")
+      players = "%s - %s" % [
+        kifu.first_players.map {|p| mask p.name}.join(", "),
+        kifu.second_players.map {|p| mask p.name}.join(", "),
+      ]
+      "%s %s" % [date, players]
+    end
   end
 
   get '/' do
@@ -76,8 +88,9 @@ class Server < Sinatra::Base
 
     ids = @@index.search_kifu()
     ks = @@db.batch_get_kifu(ids)
+    player_map(ks)
     index = ids.zip(ks).map { |id, kifu|
-      {id: id, title: kifu.start_time}
+      {id: id, kifu: kifu}
     }
     erb :index, :locals => {
       index: index,
@@ -95,7 +108,7 @@ class Server < Sinatra::Base
       redirect to('/kifu/%s/' % kifu.alias)
     end
 
-    player_map(kifu)
+    player_map([kifu])
 
     erb :kifu, :locals => {
       kifu: kifu,
@@ -114,8 +127,6 @@ class Server < Sinatra::Base
       redirect to('/kifu/%s/%s' % [kifu.alias, params['seq']])
     end
 
-    player_map(kifu)
-
     seq = params['seq'].to_i
     step = seq != 0 ? kifu.steps[seq-1] : nil
     board_id = kifu.board_ids[seq]
@@ -128,6 +139,8 @@ class Server < Sinatra::Base
       step_id.kifu_id != params['kifu_id']
     }
     kifu_list = @@db.batch_get_kifu(step_ids.map {|s| s.kifu_id })
+
+    player_map([kifu] + kifu_list)
 
     steps = step_ids.zip(kifu_list)
     captured_first, captured_second, pieces = board.to_v

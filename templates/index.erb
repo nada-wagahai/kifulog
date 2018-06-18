@@ -6,7 +6,7 @@
 <body>
 <ol>
   <% index.each do |c| %>
-    <li><a href="kifu/<%= c[:id] %>/"><%= c[:title] %></a></li>
+    <li><a href="kifu/<%= c[:id] %>/"><%= title c[:kifu] %></a></li>
   <% end %>
 </ol>
 <% if !session.nil? %>

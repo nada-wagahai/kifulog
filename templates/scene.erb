@@ -95,7 +95,7 @@ div.next_step {
   <div>同一局面</div>
   <ul>
     <% steps.each do |step| %>
-      <li><a href="../<%= step[0].kifu_id %>/<%= step[0].seq %>"><%= step[1].start_time %>: <%= step[0].seq %>手 <%= step[1].steps[step[0].seq].move %></a></li>
+      <li><a href="../<%= step[0].kifu_id %>/<%= step[0].seq %>"><%= title step[1] %>: <%= step[0].seq %>手</a> →<a href="../<%= step[0].kifu_id %>/<%= step[0].seq + 1 %>"><%= step[1].steps[step[0].seq].move %></a></li>
     <% end %>
   </ul>
 </div>
