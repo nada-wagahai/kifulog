@@ -110,7 +110,7 @@ class FileDB
     account_ids.each do |account_id|
       ret << get_account(account_id)
     end
-    ret
+    ret.select {|a| !a.nil? }
   end
 
   def get_accounts_all()

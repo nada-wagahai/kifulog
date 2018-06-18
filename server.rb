@@ -153,10 +153,7 @@ class Server < Sinatra::Base
     steps = step_ids.zip(kifu_list)
     captured_first, captured_second, pieces = board.to_v
 
-    p params
-    p board_id
     comment_ids = @@index.search_comment(board_id: board_id)
-    p comment_ids
     comments = @@db.batch_get_comments(comment_ids)
 
     erb :scene, :locals => {
