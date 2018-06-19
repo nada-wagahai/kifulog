@@ -118,6 +118,13 @@ class Server < Sinatra::Base
 
     player_map([kifu])
 
+    comment_ids = @@index.search_comment(kifu_id: params['id'])
+    p params['id']
+    p comment_ids
+    comments = @@db.batch_get_comments(comment_ids)
+    @seq_comment = comments.map {|c| [c.seq, c] }.to_h
+    p @seq_comment
+
     erb :kifu, :locals => {
       kifu: kifu,
       params: params,

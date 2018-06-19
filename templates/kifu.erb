@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title><%= kifu.start_time %></title>
+<title><%= title kifu %></title>
 </head>
 <body>
   <dl>
@@ -13,10 +13,11 @@
   <dt>後手</dt><dd><%= kifu.second_players.map {|p| mask(p.name)}.join(", ") %></dd>
   </dl>
   <table>
-    <tr><th>手数</th><th>指手</th><th>消費時間</th><th></th></tr>
+    <tr><th>手数</th><th>指手</th><th>消費時間</th><th></th><th></th></tr>
     <tr>
       <td></td>
       <td>対局開始</td>
+      <td></td>
       <td></td>
       <td><a href="0">■</a></td>
     </tr>
@@ -25,6 +26,7 @@
         <td><%= step.seq %></td>
         <td><%= step.move %></td>
         <td><%= step.elapsed_time %></td>
+        <td><%= @seq_comment[step.seq].nil? ? "" : "*" %></td>
         <td><a href="<%= step.seq %>">■</a></td>
       </tr>
     <% end %>

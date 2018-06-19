@@ -99,9 +99,15 @@ class EsIndex
   def search_comment(params)
     return [] unless @client.indices.exists index: @comment_index
 
+    mustQueries = []
+    mustQueries << { match: { boardId: params[:board_id] } } unless params[:board_id].nil?
+    mustQueries << { match: { kifuId: params[:kifu_id] } } unless params[:kifu_id].nil?
+
     query = {
       query: {
-        match: { boardId: params[:board_id] },
+        bool: {
+          must: mustQueries,
+        },
       },
       size: 100,
       sort: [
