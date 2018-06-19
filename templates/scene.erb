@@ -106,7 +106,7 @@ div.next_step {
 <ul>
   <% comments.select{|c|!c.nil?}.each do |comment| %>
   <li><%= "%s: %s" % [@owner_map[comment.owner_id], comment.text] %>
-    <% if @session.role == :ADMIN || comment.owner_id == @session.account_id %>
+    <% if login? && (@session.role == :ADMIN || comment.owner_id == @session.account_id) %>
     <form action="../../comment/<%= comment.id %>/delete" method="POST" style="display: inline">
       <input type="submit" value="削除"/>
     </form>
