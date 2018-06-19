@@ -104,7 +104,7 @@ div.next_step {
 <% if !comments.empty? %>
   Comments:
 <ul>
-  <% comments.select{|c| !c.nil? }.each do |comment| %>
+  <% comments.select{|c|!c.nil?}.each do |comment| %>
   <li><%= "%s: %s" % [@owner_map[comment.owner_id], comment.text] %>
     <% if @session.role == :ADMIN || comment.owner_id == @session.account_id %>
     <form action="../../comment/<%= comment.id %>/delete" method="POST" style="display: inline">
