@@ -209,6 +209,22 @@ class Server < Sinatra::Base
     }
   end
 
+  post "/comment/:comment_id/delete" do
+    authorize!
+
+    not_found if !login?
+
+    comments = @@db.batch_get_comments([params["comment_id"]])
+    comment = comments.shift
+    not_found if comment.nil?
+    not_found if @session.role != :ADMIN && comment.owner_id != @session.account_id
+
+    @@db.delete_comment(comment.id)
+    @@index.delete_comment(comment.id)
+
+    redirect back
+  end
+
   post '/login' do
     halt 401, "Unauthorized" if cookies[:token] != params["token"].chomp
 

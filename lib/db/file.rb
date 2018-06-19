@@ -140,6 +140,11 @@ class FileDB
     }
   end
 
+  def delete_comment(comment_id)
+    @comment_db.delete(comment_id)
+    save_db(@comment_file, @comment_db)
+  end
+
   private
 
   def load_db(file)

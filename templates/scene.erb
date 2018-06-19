@@ -105,7 +105,13 @@ div.next_step {
   Comments:
 <ul>
   <% comments.each do |comment| %>
-  <li><%= comment.text %></li>
+  <li><%= comment.text %>
+    <% if @session.role == :ADMIN || comment.owner_id == @session.account_id %>
+    <form action="../../comment/<%= comment.id %>/delete" method="POST" style="display: inline">
+      <input type="submit" value="削除"/>
+    </form>
+    <% end %>
+  </li>
   <% end %>
 </ul>
 <form action="<%= "%s/comment" % params['seq'] %>" method="POST">

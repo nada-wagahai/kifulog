@@ -111,4 +111,8 @@ class EsIndex
     res = @client.search index: @comment_index, body: query
     res['hits']['hits'].map {|doc| doc['_id'] }
   end
+
+  def delete_comment(comment_id)
+    @client.delete index: @comment_index, type: "comment", id: comment_id
+  end
 end
