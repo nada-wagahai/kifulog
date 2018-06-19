@@ -101,7 +101,7 @@ div.next_step {
 </div>
 <% end %>
 
-<% if login? %>
+<% if login? && !comments.empty? %>
   Comments:
 <ul>
   <% comments.each do |comment| %>

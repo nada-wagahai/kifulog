@@ -171,6 +171,8 @@ class Server < Sinatra::Base
     authorize!
     not_found if !login?
 
+    redirect back if params['comment'].nil?
+
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
