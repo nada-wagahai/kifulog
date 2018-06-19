@@ -156,6 +156,9 @@ class Server < Sinatra::Base
     comment_ids = @@index.search_comment(board_id: board_id)
     comments = @@db.batch_get_comments(comment_ids)
 
+    account_ids = comments.select{|c|!c.nil?}.map {|c| c.owner_id }
+    @owner_map = @@db.batch_get_account(account_ids).map {|a| [a.id, a.name]}.to_h
+
     erb :scene, :locals => {
       captured_first: captured_first,
       captured_second: captured_second,

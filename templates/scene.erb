@@ -101,11 +101,11 @@ div.next_step {
 </div>
 <% end %>
 
-<% if login? && !comments.empty? %>
+<% if !comments.empty? %>
   Comments:
 <ul>
-  <% comments.each do |comment| %>
-  <li><%= comment.text %>
+  <% comments.select{|c| !c.nil? }.each do |comment| %>
+  <li><%= "%s: %s" % [@owner_map[comment.owner_id], comment.text] %>
     <% if @session.role == :ADMIN || comment.owner_id == @session.account_id %>
     <form action="../../comment/<%= comment.id %>/delete" method="POST" style="display: inline">
       <input type="submit" value="削除"/>
@@ -114,6 +114,8 @@ div.next_step {
   </li>
   <% end %>
 </ul>
+<% end %>
+<% if login? %>
 <form action="<%= "%s/comment" % params['seq'] %>" method="POST">
 <textarea name="comment"></textarea>
 <input type="submit"/>
