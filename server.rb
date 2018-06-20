@@ -96,14 +96,16 @@ class Server < Sinatra::Base
 
     ids = @@index.search_kifu()
     ks = @@db.batch_get_kifu(ids)
-    player_map(ks)
-    index = ids.zip(ks).map { |id, kifu|
+    @index = ids.zip(ks).map { |id, kifu|
       {id: id, kifu: kifu}
     }
-    erb :index, :locals => {
-      index: index,
-      session: @session,
-    }
+
+    cids = @@index.search_comment(order: "desc", size: 10)
+    @recent_comments = @@db.batch_get_comments(cids)
+
+    player_map(ks)
+
+    erb :index
   end
 
   get '/kifu/:id/' do
@@ -119,11 +121,12 @@ class Server < Sinatra::Base
     player_map([kifu])
 
     comment_ids = @@index.search_comment(kifu_id: params['id'])
-    p params['id']
-    p comment_ids
     comments = @@db.batch_get_comments(comment_ids)
-    @seq_comment = comments.map {|c| [c.seq, c] }.to_h
-    p @seq_comment
+
+    @seq_comment = Hash.new []
+    comments.each {|c|
+      @seq_comment[c.seq] += [c]
+    }
 
     erb :kifu, :locals => {
       kifu: kifu,

@@ -103,18 +103,20 @@ class EsIndex
     mustQueries << { match: { boardId: params[:board_id] } } unless params[:board_id].nil?
     mustQueries << { match: { kifuId: params[:kifu_id] } } unless params[:kifu_id].nil?
 
-    query = {
-      query: {
-        bool: {
-          must: mustQueries,
-        },
-      },
-      size: 100,
+    query = mustQueries.empty? ? { match_all: {} } : { bool: { must: mustQueries } }
+
+    size = params.fetch(:size, 100)
+
+    order = params.fetch(:order, "asc")
+
+    body = {
+      query: query,
+      size: size,
       sort: [
-        { createdMs: "asc" },
+        { createdMs: order },
       ],
     }
-    res = @client.search index: @comment_index, body: query
+    res = @client.search index: @comment_index, body: body
     res['hits']['hits'].map {|doc| doc['_id'] }
   end
 

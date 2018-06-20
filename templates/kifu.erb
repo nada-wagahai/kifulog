@@ -18,16 +18,17 @@
       <td></td>
       <td>対局開始</td>
       <td></td>
-      <td></td>
       <td><a href="0">■</a></td>
+      <td></td>
     </tr>
     <% kifu.steps.each do |step| %>
       <tr>
         <td><%= step.seq %></td>
         <td><%= step.move %></td>
         <td><%= step.elapsed_time %></td>
-        <td><%= @seq_comment[step.seq].nil? ? "" : "*" %></td>
         <td><a href="<%= step.seq %>">■</a></td>
+        <% cs = @seq_comment[step.seq] %>
+        <td><%= cs.empty? ? "" : "*%d" % cs.size %></td>
       </tr>
     <% end %>
   </table>
