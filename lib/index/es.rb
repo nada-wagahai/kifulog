@@ -103,7 +103,12 @@ class EsIndex
     mustQueries << { match: { boardId: params[:board_id] } } unless params[:board_id].nil?
     mustQueries << { match: { kifuId: params[:kifu_id] } } unless params[:kifu_id].nil?
 
-    query = mustQueries.empty? ? { match_all: {} } : { bool: { must: mustQueries } }
+    query = {
+      bool: {
+        must: mustQueries.empty? ? { match_all: {} } : mustQueries,
+      }
+    }
+    query[:bool][:must_not] = { match: { ownerId: params[:except_owner] } } unless params[:except_owner].nil?
 
     size = params.fetch(:size, 100)
 

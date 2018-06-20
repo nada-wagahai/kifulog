@@ -30,7 +30,7 @@
   <% end %>
 </ol>
 </div>
-<% if login? %>
+<% if !@recent_comments.empty? %>
 <div class="recent_comments">
   <p class="header">最近のコメント</p>
   <% @recent_comments.each do |comment| %>

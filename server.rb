@@ -95,8 +95,12 @@ class Server < Sinatra::Base
       {id: id, kifu: kifu}
     }
 
-    cids = @@index.search_comment(order: "desc", size: 10)
-    @recent_comments = @@db.batch_get_comments(cids)
+    if login?
+      cids = @@index.search_comment(order: "desc", size: 10, except_owner: @session.account_id )
+      @recent_comments = @@db.batch_get_comments(cids)
+    else
+      @recent_comments = []
+    end
 
     player_map(ks)
 
