@@ -19,6 +19,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_enum "account.Role" do
     value :ADMIN, 0
+    value :PLAYER, 1
   end
 end
 

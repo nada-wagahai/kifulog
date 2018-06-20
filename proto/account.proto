@@ -4,6 +4,7 @@ package account;
 
 enum Role {
   ADMIN = 0;
+  PLAYER = 1;
 }
 
 message Account {
