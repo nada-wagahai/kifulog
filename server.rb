@@ -2,10 +2,10 @@
 
 require 'sinatra/base'
 require 'sinatra/cookies'
-require 'base64'
 require 'bcrypt'
 require 'securerandom'
 
+require './proto/config_pb'
 require './proto/kifu_pb'
 require './proto/account_pb'
 require './proto/comment_pb'
@@ -13,39 +13,34 @@ require './proto/comment_pb'
 require './lib/parser'
 require './lib/pb'
 require './lib/db/file'
-require './lib/option'
 require './lib/index/es'
 
-def prepare(opt)
-  Dir.mkdir opt.data_dir if !Dir.exist? opt.data_dir
+def prepare(config)
+  Dir.mkdir config.data_dir if !Dir.exist? config.data_dir
 
-  records_dir = opt.data_dir + "/" + opt.records_dir
+  records_dir = config.data_dir + "/records"
   Dir.mkdir records_dir if !Dir.exist? records_dir
 end
 
 class Server < Sinatra::Base
-  require 'psych'
-  require 'csv'
-
   helpers Sinatra::Cookies
 
-  def self.start(opt)
-    @@random = Random.new
-    @@script_name = opt.script_name
-    @@db = FileDB.new(opt.data_dir + "/db")
-    @@records_dir = opt.data_dir + "/" + opt.records_dir
+  def self.start(config)
+    @@script_name = config.script_name
+    @@db = FileDB.new(config.data_dir + "/db")
+    @@records_dir = config.data_dir + "/records"
     @@index = EsIndex.new(
-      kifu_index: opt.kifu_index,
-      step_index: opt.step_index,
-      account_index: opt.account_index,
-      comment_index: opt.comment_index,
-      log: opt.es_log,
+      kifu_index: config.kifu_index,
+      step_index: config.step_index,
+      account_index: config.account_index,
+      comment_index: config.comment_index,
+      log: config.es_log,
     )
 
     options = {
       :views => 'templates',
       :bind => '127.0.0.1',
-      :port => opt.port,
+      :port => config.port,
     }
     run! options
   end
@@ -215,7 +210,7 @@ class Server < Sinatra::Base
   end
 
   get '/login' do
-    token = Base64.encode64 @@random.bytes(39)
+    token = SecureRandom.base64 30
     cookies[:token] = token.chomp
     erb :login, :locals => {
       token: token,
@@ -247,7 +242,7 @@ class Server < Sinatra::Base
     password = BCrypt::Password.new(account.hashed_password)
     halt 401, "Unauthorized" unless password == params["password"].chomp
 
-    session_id = Base64.encode64(@@random.bytes(39)).chomp
+    session_id = SecureRandom.base64 30
     session = Account::Session.new(
       id: session_id,
       account_id: account.id,
@@ -312,9 +307,9 @@ class Server < Sinatra::Base
 end
 
 def main(args)
-  opt = Option.new(args)
-  prepare(opt)
-  Server.start(opt)
+  config = Config::Config.decode_json IO.read "config.json"
+  prepare(config)
+  Server.start(config)
 end
 
 main(ARGV)

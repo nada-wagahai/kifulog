@@ -2,18 +2,18 @@
 
 require './lib/db/file'
 require './lib/index/es'
-require './lib/option'
+require './proto/config_pb'
 
 def main(args)
-  opt = Option.new(args)
+  config = Config::Config.decode_json IO.read "config.json"
 
-  db = FileDB.new(opt.data_dir + "/db")
+  db = FileDB.new(config.data_dir + "/db")
 
   index = EsIndex.new(
-    kifu_index: opt.kifu_index,
-    step_index: opt.step_index,
-    account_index: opt.account_index,
-    log: opt.es_log,
+    kifu_index: config.kifu_index,
+    step_index: config.step_index,
+    account_index: config.account_index,
+    log: config.es_log,
   )
 
   db.get_kifu_all().each do |kifu|

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package config;
+
+message Config {
+  string script_name = 1;
+  int32 port = 2;
+  string data_dir = 3;
+  string kifu_index = 4;
+  string step_index = 5;
+  string account_index = 6;
+  string comment_index = 7;
+  bool es_log = 8;
+}

@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-require './lib/option'
 require './lib/parser'
 require './lib/db/file'
+require './proto/config_pb'
 
 def main(args)
-  opt = Option.new(args)
-  records_dir = "%s/%s" % [opt.data_dir, opt.records_dir]
+  config = Config::Config.decode_json IO.read "config.json"
+  records_dir = "%s/records" % config.data_dir
 
-  db = FileDB.new(opt.data_dir + "/db")
+  db = FileDB.new(config.data_dir + "/db")
   Dir["%s/*" % records_dir].each do |file|
     parser = Parser.new
 
