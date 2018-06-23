@@ -7,7 +7,26 @@ div.board {
   display: inline-block;
 }
 
+div.board table.label-x td {
+  font-size: 12px;
+  border-style: none;
+  width: 29px;
+  text-align: center;
+}
+
+div.board table.label-y {
+  display: inline-block;
+}
+
+div.board table.label-y td {
+  font-size: 12px;
+  border-style: none;
+  height: 29px;
+  text-align: center;
+}
+
 table.board {
+  display: inline-block;
   border-style: solid;
   border-color: black;
   border-spacing: 0;
@@ -61,6 +80,20 @@ div.next_step {
   </div>
   <div class="board">
     <div>☖持駒: <% captured_second.each do |p| %><%= p.name %><% end %></div>
+    <table class="label-x">
+      <tr>
+        <td>9</td>
+        <td>8</td>
+        <td>7</td>
+        <td>6</td>
+        <td>5</td>
+        <td>4</td>
+        <td>3</td>
+        <td>2</td>
+        <td>1</td>
+      </tr>
+    </table>
+    <div>
     <table class="board">
     <% pieces.each_with_index do |rows, y| %>
       <tr>
@@ -70,6 +103,18 @@ div.next_step {
       </tr>
     <% end %>
     </table>
+    <table class="label-y">
+      <tr><td>一</td></tr>
+      <tr><td>二</td></tr>
+      <tr><td>三</td></tr>
+      <tr><td>四</td></tr>
+      <tr><td>五</td></tr>
+      <tr><td>六</td></tr>
+      <tr><td>七</td></tr>
+      <tr><td>八</td></tr>
+      <tr><td>九</td></tr>
+    </table>
+    </div>
     <div>☗持駒: <% captured_first.each do |p| %><%= p.name %><% end %></div>
     <div>
       <div class="prev_step">
