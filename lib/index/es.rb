@@ -93,7 +93,7 @@ class EsIndex
       board_id: comment.board_id,
       kifu_id: comment.kifu_id,
     )
-    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json
+    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json, refresh: true
   end
 
   def search_comment(params)
