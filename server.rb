@@ -238,13 +238,22 @@ class Server < Sinatra::Base
   end
 
   post '/login' do
-    halt 401, "Unauthorized" if cookies[:token] != params["token"].chomp
+    if cookies[:token] != params["token"].chomp
+      puts "token unmatch"
+      halt 401, "Unauthorized"
+    end
 
     account = @@db.get_account(params["id"])
-    halt 401, "Unauthorized" if account.nil?
+    if account.nil?
+      puts "account not found: %s" % params["id"]
+      halt 401, "Unauthorized" 
+    end
 
     password = BCrypt::Password.new(account.hashed_password)
-    halt 401, "Unauthorized" unless password == params["password"].chomp
+    if password != params["password"].chomp
+      puts "password unmatch: account=%s" % account.id
+      halt 401, "Unauthorized"
+    end
 
     session_id = SecureRandom.base64 30
     session = Account::Session.new(
