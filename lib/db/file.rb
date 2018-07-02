@@ -18,9 +18,6 @@ class FileDB
     @board_file = path + "/board"
     @board_db = load_db(@board_file)
 
-    @step_file = path + "/step"
-    @step_db = load_db(@step_file)
-
     @account_file = path + "/account"
     @account_db = load_db(@account_file)
 
@@ -80,19 +77,6 @@ class FileDB
   def get_board(board_id)
     bytes = @board_db[board_id]
     bytes.nil? ? nil : Kifu::Board.decode(bytes)
-  end
-
-  def put_step_list(board_id, kifu_id, step)
-    step_list = get_step_list(board_id)
-    step_list.step_ids << Kifu::StepList::StepId.new(kifu_id: kifu_id, seq: step.seq, finished: step.finished)
-
-    @step_db[board_id] = Kifu::StepList.encode step_list
-    save_db(@step_file, @step_db)
-  end
-
-  def get_step_list(board_id)
-    bytes = @step_db[board_id]
-    bytes.nil? ? Kifu::StepList.new() : Kifu::StepList.decode(bytes)
   end
 
   def put_account(account)
