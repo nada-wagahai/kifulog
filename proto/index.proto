@@ -21,6 +21,7 @@ message Step {
   StepId id = 1;
   string board_id = 2;
   int64 game_start_ts = 3;
+  string prev_board_id = 4;
 }
 
 message Account {

@@ -26,6 +26,7 @@ class EsIndex
           finished: step.finished,
         ),
         board_id: kifu.board_ids[step.seq],
+        prev_board_id: kifu.board_ids[step.seq - 1],
         game_start_ts: kifu.start_ts,
       )
       @client.index index: @step_index, type: "step", id: step_doc.id.encode_base64, body: step_doc.to_json

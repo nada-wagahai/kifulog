@@ -17,6 +17,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :id, :message, 1, "index.Step.StepId"
     optional :board_id, :string, 2
     optional :game_start_ts, :int64, 3
+    optional :prev_board_id, :string, 4
   end
   add_message "index.Step.StepId" do
     optional :kifu_id, :string, 1
