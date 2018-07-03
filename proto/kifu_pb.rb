@@ -11,6 +11,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "kifu.Player" do
     optional :order, :enum, 1, "kifu.Player.Order"
     optional :name, :string, 2
+    optional :note, :string, 3
   end
   add_enum "kifu.Player.Order" do
     value :FIRST, 0
@@ -49,6 +50,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :timestamp_sec, :int32, 8
     optional :thinking_sec, :int32, 9
     optional :finished, :bool, 10
+    repeated :notes, :string, 11
   end
   add_message "kifu.Board" do
     repeated :pieces, :message, 1, "kifu.Piece"
@@ -62,6 +64,11 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     repeated :steps, :message, 6, "kifu.Step"
     repeated :board_ids, :string, 7
     optional :alias, :string, 8
+    optional :type, :enum, 9, "kifu.Kifu.Type"
+  end
+  add_enum "kifu.Kifu.Type" do
+    value :SHOGI24, 0
+    value :KIF, 1
   end
 end
 
@@ -74,4 +81,5 @@ module Kifu
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Step").msgclass
   Board = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Board").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu").msgclass
+  Kifu::Type = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu.Type").enummodule
 end
