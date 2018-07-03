@@ -291,7 +291,7 @@ class Server < Sinatra::Base
   post '/admin/upload' do
     input = params['kifu']
 
-    parser = Parser.new
+    parser = Parser::Shogi24.new
     kifu = parser.parse! input
     boards = kifu.boards!
 
@@ -300,9 +300,7 @@ class Server < Sinatra::Base
 
     @@db.put_kifu(kifu)
     @@index.put(kifu)
-    boards.each_with_index do |board, i|
-      @@db.put_board(board)
-    end
+    @@db.put_boards(boards)
 
     redirect back
   end

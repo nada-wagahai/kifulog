@@ -10,7 +10,7 @@ def main(args)
 
   db = FileDB.new(config.data_dir + "/db")
   Dir["%s/*" % records_dir].each do |file|
-    parser = Parser.new
+    parser = Parser::Shogi24.new
 
     input = ""
     open(file) {|f|
