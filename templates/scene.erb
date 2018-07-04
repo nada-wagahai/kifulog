@@ -141,7 +141,7 @@ div.next_step {
     </div>
   </div>
   <div>
-    <% if !step.notes.empty? %>
+    <% if !step.nil? && !step.notes.nil? && !step.notes.empty? %>
     <ul>
       <% step.notes.each do |note| %>
         <li><%= note %></li>
