@@ -69,9 +69,9 @@ message Kifu {
   repeated Step steps = 6;
   repeated string board_ids = 7;
   string alias = 8;
-  enum Type {
+  enum Format {
     SHOGI24 = 0;
     KIF = 1;
   }
-  Type type = 9;
+  Format format = 9;
 }

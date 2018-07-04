@@ -64,9 +64,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     repeated :steps, :message, 6, "kifu.Step"
     repeated :board_ids, :string, 7
     optional :alias, :string, 8
-    optional :type, :enum, 9, "kifu.Kifu.Type"
+    optional :format, :enum, 9, "kifu.Kifu.Format"
   end
-  add_enum "kifu.Kifu.Type" do
+  add_enum "kifu.Kifu.Format" do
     value :SHOGI24, 0
     value :KIF, 1
   end
@@ -81,5 +81,5 @@ module Kifu
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Step").msgclass
   Board = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Board").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu").msgclass
-  Kifu::Type = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu.Type").enummodule
+  Kifu::Format = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu.Format").enummodule
 end

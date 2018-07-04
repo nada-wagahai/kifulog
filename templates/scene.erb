@@ -98,7 +98,18 @@ div.next_step {
     <% pieces.each_with_index do |rows, y| %>
       <tr>
       <% rows.each_with_index do |p, x| %>
-        <td class="<%= p.order == :SECOND ? "second" : "first" %><% if !step.nil? && step.pos.x == 9-x && step.pos.y == y+1 %> step<% end %><% if !step.nil? && step.prev.x == 9-x && step.prev.y == y+1 %> prev<% end %>"><%= p.name_fig %></td>
+        <%
+          order = p.order == :SECOND ? "second" : "first"
+          cur_step = ""
+          if !step.nil? && step.pos.x == 9-x && step.pos.y == y+1
+            cur_step = " step"
+          end
+          prev_step = ""
+          if !step.nil? && !step.prev.nil? && step.prev.x == 9-x && step.prev.y == y+1
+            prev_step = " prev"
+          end
+        %>
+        <td class="<%= order %><%= cur_step %><%= prev_step %>"><%= p.name_fig %></td>
       <% end %>
       </tr>
     <% end %>
@@ -128,6 +139,15 @@ div.next_step {
         <% end %>
       </div>
     </div>
+  </div>
+  <div>
+    <% if !step.notes.empty? %>
+    <ul>
+      <% step.notes.each do |note| %>
+        <li><%= note %></li>
+      <% end %>
+    </ul>
+    <% end %>
   </div>
 </div>
 

@@ -178,11 +178,19 @@ class Kifu::Piece
 end
 
 module Kifu::Piece::Type
-  PIECES = ["王", "飛", "竜", "角", "馬", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "歩", "と"]
+  PIECES = ["王", "飛", "竜", "角", "馬", "金", "銀", "成銀", "桂", "成桂", "香", "成香", "歩", "と", "玉", "龍"]
   PIECES_FIG = ["玉", "飛", "竜", "角", "馬", "金", "銀", "全", "桂", "圭", "香", "杏", "歩", "と"]
 
   def self.from_name(str)
-    PIECES.index(str) + 1
+    code = PIECES.index(str)
+    case code
+    when 14
+      1
+    when 15
+      3
+    else
+      code + 1
+    end
   end
 
   def self.name(sym)

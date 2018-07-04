@@ -291,8 +291,22 @@ class Server < Sinatra::Base
   post '/admin/upload' do
     input = params['kifu']
 
-    parser = Parser::Shogi24.new
-    kifu = parser.parse! input
+    parser = nil
+    case params['format']
+    when "24"
+      parser = Parser::Shogi24.new
+    when "KIF"
+      parser = Parser::Kif.new
+    else
+      halt 400, "Unknown format" 
+    end
+
+    kifu = nil
+    begin
+      kifu = parser.parse! input
+    rescue e
+      halt 400, "Parse error"
+    end
     boards = kifu.boards!
 
     file = @@records_dir + '/' + kifu.kifu_id

@@ -37,6 +37,8 @@
   <a href="<%= "kifu/%s/%d" % [comment.kifu_id, comment.seq] %>" class="comment"><%= comment.text[0, 20] %></a>
   <% end %>
 </div>
+<% end %>
+<% if login? %>
 <div class="link">
   <a href="logout">logout</a>
   <% if @session.role == :ADMIN %>
