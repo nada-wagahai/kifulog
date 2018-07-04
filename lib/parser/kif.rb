@@ -123,8 +123,8 @@ class Parser::Kif
       promoted: promoted,
       putted: putted,
       player: seq.to_i.odd? ? Kifu::Player::Order::FIRST : Kifu::Player::Order::SECOND,
-      timestamp_sec: thinking,
-      thinking_sec: timestamp,
+      timestamp_sec: timestamp,
+      thinking_sec: thinking,
       finished: finished,
       notes: notes,
     )
