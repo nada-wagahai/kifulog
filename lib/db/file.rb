@@ -1,5 +1,6 @@
 require './proto/kifu_pb'
 require './proto/account_pb'
+require './proto/comment_pb'
 require './lib/pb'
 
 class FileDB
@@ -119,7 +120,15 @@ class FileDB
   end
 
   def batch_get_comments(comment_ids)
+    return [] if comment_ids.empty?
+
     @comment_db.values_at(*comment_ids).map { |bytes|
+      bytes.nil? ? nil : Comment::Comment.decode(bytes)
+    }
+  end
+
+  def batch_get_all_comments()
+    @comment_db.values.map { |bytes|
       bytes.nil? ? nil : Comment::Comment.decode(bytes)
     }
   end

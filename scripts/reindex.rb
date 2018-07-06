@@ -13,6 +13,7 @@ def main(args)
     kifu_index: config.kifu_index,
     step_index: config.step_index,
     account_index: config.account_index,
+    comment_index: config.comment_index,
     log: config.es_log,
   )
 
@@ -22,6 +23,10 @@ def main(args)
 
   db.get_accounts_all().each do |account|
     index.put_account(account)
+  end
+
+  db.batch_get_all_comments().each do |comment|
+    index.put_comment(comment, false)
   end
 end
 

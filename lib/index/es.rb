@@ -19,17 +19,19 @@ class EsIndex
     @client.index index: @kifu_index, type: "kifu", id: kifu_doc.id, body: kifu_doc.to_json
 
     kifu.steps.each do |step|
+      step_id = Index::Step::StepId.new(
+        kifu_id: kifu_doc.id,
+        seq: step.seq,
+        finished: step.finished,
+      )
+      id = "STEP:%s:%d:%s" % [step_id.kifu_id, step_id.seq, step_id.finished]
       step_doc = Index::Step.new(
-        id: Index::Step::StepId.new(
-          kifu_id: kifu_doc.id,
-          seq: step.seq,
-          finished: step.finished,
-        ),
+        id: step_id,
         board_id: kifu.board_ids[step.seq],
         prev_board_id: kifu.board_ids[step.seq - 1],
         game_start_ts: kifu.start_ts,
       )
-      @client.index index: @step_index, type: "step", id: step_doc.id.encode_base64, body: step_doc.to_json
+      @client.index index: @step_index, type: "step", id: id, body: step_doc.to_json
     end
   end
 
@@ -61,10 +63,20 @@ class EsIndex
         { gameStartTs: "asc" },
       ],
     }
+
     res = @client.search index: @step_index, body: query
+
+    ret = []
     res['hits']['hits'].map {|doc|
-      Index::Step::StepId.decode_base64 doc['_id']
+      label, kifu_id, seq, finished = doc['_id'].split(":")
+      next if label != "STEP"
+      ret << Index::Step::StepId.new(
+        kifu_id: kifu_id,
+        seq: seq.to_i,
+        finished: finished == "true",
+      )
     }
+    ret
   end
 
   def put_account(account)
@@ -86,7 +98,7 @@ class EsIndex
     res['hits']['hits'].map {|doc| doc['_id'] }
   end
 
-  def put_comment(comment)
+  def put_comment(comment, refresh = true)
     doc = Index::Comment.new(
       id: comment.id,
       owner_id: comment.owner_id,
@@ -94,7 +106,7 @@ class EsIndex
       board_id: comment.board_id,
       kifu_id: comment.kifu_id,
     )
-    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json, refresh: true
+    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json, refresh: refresh
   end
 
   def search_comment(params)
