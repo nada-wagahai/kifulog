@@ -2,9 +2,6 @@
   "scriptName": "/kifu",
   "port": 31011,
   "dataDir": "./data",
-  "kifuIndex": "kifu_dev",
-  "stepIndex": "step_dev",
-  "accountIndex": "account_dev",
-  "commentIndex": "comment_dev",
+  "index": "kifulog_dev",
   "esLog": false
 }
