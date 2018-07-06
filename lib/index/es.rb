@@ -120,7 +120,7 @@ class EsIndex
     res = @client.search index: @index, body: query
     ret = []
     res['hits']['hits'].map {|doc|
-      label, id = doc['_id']
+      label, id = doc['_id'].split(":")
       next if label != "ACCOUNT"
       ret << id
     }

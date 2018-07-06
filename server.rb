@@ -59,7 +59,7 @@ class Server < Sinatra::Base
     def player_map(kifus)
       player_ids = kifus.map{|kifu|
         kifu.players.map {|p| p.name }
-      }.flatten
+      }.flatten.uniq
       account_ids = @@index.search_accounts(player_ids)
       accounts = @@db.batch_get_account(account_ids)
 
