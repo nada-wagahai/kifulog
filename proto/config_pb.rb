@@ -8,11 +8,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :script_name, :string, 1
     optional :port, :int32, 2
     optional :data_dir, :string, 3
-    optional :kifu_index, :string, 4
-    optional :step_index, :string, 5
-    optional :account_index, :string, 6
-    optional :comment_index, :string, 7
     optional :es_log, :bool, 8
+    optional :index, :string, 9
   end
 end
 

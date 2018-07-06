@@ -49,18 +49,6 @@ class Kifu::Kifu
     str = "%d:%s" % [start_ts, vs]
     Digest::MD5.hexdigest(str)
   end
-
-  def to_index
-    Index::Kifu.new(
-      id: self.id,
-      first_players: self.first_players.map {|p| p.name},
-      second_players: self.second_players.map {|p| p.name},
-      start_ts: self.start_ts,
-      end_ts: self.end_ts,
-      board_ids: self.board_ids.to_a,
-      alias: !self.alias.empty?,
-    )
-  end
 end
 
 class Kifu::Pos

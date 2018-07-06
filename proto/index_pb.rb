@@ -4,6 +4,14 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
+  add_message "index.Document" do
+    oneof :type do
+      optional :kifu, :message, 1, "index.Kifu"
+      optional :step, :message, 2, "index.Step"
+      optional :account, :message, 3, "index.Account"
+      optional :comment, :message, 4, "index.Comment"
+    end
+  end
   add_message "index.Kifu" do
     optional :id, :string, 1
     repeated :first_players, :string, 2
@@ -38,6 +46,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module Index
+  Document = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Document").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Kifu").msgclass
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step").msgclass
   Step::StepId = Google::Protobuf::DescriptorPool.generated_pool.lookup("index.Step.StepId").msgclass

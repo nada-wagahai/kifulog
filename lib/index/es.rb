@@ -7,31 +7,41 @@ require './lib/pb'
 
 class EsIndex
   def initialize(opt)
-    @kifu_index = opt[:kifu_index]
-    @step_index = opt[:step_index]
-    @account_index = opt[:account_index]
-    @comment_index = opt[:comment_index]
     @client = Elasticsearch::Client.new log: opt[:log]
+    @index = opt[:index]
   end
 
   def put(kifu)
-    kifu_doc = kifu.to_index
-    @client.index index: @kifu_index, type: "kifu", id: kifu_doc.id, body: kifu_doc.to_json
+    kifu_doc = Index::Document.new(
+      kifu: Index::Kifu.new(
+        id: kifu.id,
+        first_players: kifu.first_players.map {|p| p.name},
+        second_players: kifu.second_players.map {|p| p.name},
+        start_ts: kifu.start_ts,
+        end_ts: kifu.end_ts,
+        board_ids: kifu.board_ids.to_a,
+        alias: !kifu.alias.empty?,
+      )
+    )
+    kifu_id = "KIFU:%s" % kifu_doc.kifu.id
+    @client.index index: @index, type: "doc", id: kifu_id, body: kifu_doc.to_h
 
     kifu.steps.each do |step|
       step_id = Index::Step::StepId.new(
-        kifu_id: kifu_doc.id,
+        kifu_id: kifu_doc.kifu.id,
         seq: step.seq,
         finished: step.finished,
       )
       id = "STEP:%s:%d:%s" % [step_id.kifu_id, step_id.seq, step_id.finished]
-      step_doc = Index::Step.new(
-        id: step_id,
-        board_id: kifu.board_ids[step.seq],
-        prev_board_id: kifu.board_ids[step.seq - 1],
-        game_start_ts: kifu.start_ts,
+      step_doc = Index::Document.new(
+        step: Index::Step.new(
+          id: step_id,
+          board_id: kifu.board_ids[step.seq],
+          prev_board_id: kifu.board_ids[step.seq - 1],
+          game_start_ts: kifu.start_ts,
+        )
       )
-      @client.index index: @step_index, type: "step", id: id, body: step_doc.to_json
+      @client.index index: @index, type: "doc", id: id, body: step_doc.to_h
     end
   end
 
@@ -39,32 +49,41 @@ class EsIndex
     query = {
       query: {
         bool: {
-          must_not: {
-            exists: { field: "alias" },
-          },
+          must: [
+            { exists: { field: "kifu" } },
+            { match: { "kifu.alias": false } },
+          ],
         },
       },
       size: 100,
       sort: [
-        { startTs: "asc" },
+        { "kifu.start_ts": "asc" },
       ],
+      _source: false,
     }
-    res = @client.search index: @kifu_index, body: query
-    res['hits']['hits'].map {|doc| doc['_id']}
+    res = @client.search index: @index, body: query
+    ret = []
+    res['hits']['hits'].each {|doc|
+      label, kifu_id = doc['_id'].split(":")
+      next if label != "KIFU"
+      ret << kifu_id
+    }
+    ret
   end
 
   def search_step(board_id)
     query = {
       query: {
-        match: { boardId: board_id },
+        match: { "step.board_id": board_id },
       },
       size: 100,
       sort: [
-        { gameStartTs: "asc" },
+        { "step.game_start_ts": "asc" },
       ],
+      _source: false,
     }
 
-    res = @client.search index: @step_index, body: query
+    res = @client.search index: @index, body: query
 
     ret = []
     res['hits']['hits'].map {|doc|
@@ -80,48 +99,59 @@ class EsIndex
   end
 
   def put_account(account)
-    account_doc = Index::Account.new(
-      id: account.id,
-      player_id: account.player_id,
+    id = "ACCOUNT:%s" % account.id
+    account_doc = Index::Document.new(
+      account: Index::Account.new(
+        id: id,
+        player_id: account.player_id,
+      )
     )
-    @client.index index: @account_index, type: "account", id: account.id, body: account_doc.to_json
+    @client.index index: @index, type: "doc", id: id, body: account_doc.to_h
   end
 
   def search_accounts(player_ids)
     query = {
       query: {
-        match: { playerId: player_ids.join(" ") },
+        match: { "account.player_id": player_ids.join(" ") },
       },
       size: 100,
+      _source: false,
     }
-    res = @client.search index: @account_index, body: query
-    res['hits']['hits'].map {|doc| doc['_id'] }
+    res = @client.search index: @index, body: query
+    ret = []
+    res['hits']['hits'].map {|doc|
+      label, id = doc['_id']
+      next if label != "ACCOUNT"
+      ret << id
+    }
+    ret
   end
 
   def put_comment(comment, refresh = true)
-    doc = Index::Comment.new(
-      id: comment.id,
-      owner_id: comment.owner_id,
-      created_ms: comment.created_ms,
-      board_id: comment.board_id,
-      kifu_id: comment.kifu_id,
+    doc = Index::Document.new(
+      comment: Index::Comment.new(
+        id: comment.id,
+        owner_id: comment.owner_id,
+        created_ms: comment.created_ms,
+        board_id: comment.board_id,
+        kifu_id: comment.kifu_id,
+      )
     )
-    @client.index index: @comment_index, type: "comment", id: doc.id, body: doc.to_json, refresh: refresh
+    id = "COMMENT:%s" % comment.id
+    @client.index index: @index, type: "doc", id: id, body: doc.to_h, refresh: refresh
   end
 
   def search_comment(params)
-    return [] unless @client.indices.exists index: @comment_index
-
     mustQueries = []
-    mustQueries << { match: { boardId: params[:board_id] } } unless params[:board_id].nil?
-    mustQueries << { match: { kifuId: params[:kifu_id] } } unless params[:kifu_id].nil?
+    mustQueries << { match: { "comment.board_id": params[:board_id] } } unless params[:board_id].nil?
+    mustQueries << { match: { "comment.kifu_id": params[:kifu_id] } } unless params[:kifu_id].nil?
 
     query = {
       bool: {
-        must: mustQueries.empty? ? { match_all: {} } : mustQueries,
+        must: mustQueries.empty? ? { exists: { field: "comment" } } : mustQueries,
       }
     }
-    query[:bool][:must_not] = { match: { ownerId: params[:except_owner] } } unless params[:except_owner].nil?
+    query[:bool][:must_not] = { match: { "comment.owner_id": params[:except_owner] } } unless params[:except_owner].nil?
 
     size = params.fetch(:size, 100)
 
@@ -131,14 +161,22 @@ class EsIndex
       query: query,
       size: size,
       sort: [
-        { createdMs: order },
+        { "comment.created_ms": order },
       ],
+      _source: false,
     }
-    res = @client.search index: @comment_index, body: body
-    res['hits']['hits'].map {|doc| doc['_id'] }
+    res = @client.search index: @index, body: body
+    ret = []
+    res['hits']['hits'].each {|doc|
+      label, id = doc['_id'].split(":")
+      next if label != "COMMENT"
+      ret << id
+    }
+    ret
   end
 
   def delete_comment(comment_id)
-    @client.delete index: @comment_index, type: "comment", id: comment_id
+    id = "COMMENT:%s" % comment_id
+    @client.delete index: @index, type: "doc", id: id
   end
 end

@@ -2,6 +2,15 @@ syntax = "proto3";
 
 package index;
 
+message Document {
+  oneof type {
+    Kifu kifu = 1;
+    Step step = 2;
+    Account account = 3;
+    Comment comment = 4;
+  }
+}
+
 message Kifu {
   string id = 1;
   repeated string first_players = 2;

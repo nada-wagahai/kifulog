@@ -30,10 +30,7 @@ class Server < Sinatra::Base
     @@db = FileDB.new(config.data_dir + "/db")
     @@records_dir = config.data_dir + "/records"
     @@index = EsIndex.new(
-      kifu_index: config.kifu_index,
-      step_index: config.step_index,
-      account_index: config.account_index,
-      comment_index: config.comment_index,
+      index: config.index,
       log: config.es_log,
     )
 

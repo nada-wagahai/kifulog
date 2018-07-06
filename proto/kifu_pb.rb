@@ -70,6 +70,11 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     value :SHOGI24, 0
     value :KIF, 1
   end
+  add_message "kifu.Metadata" do
+    optional :kifu_id, :string, 1
+    optional :owner_id, :string, 2
+    optional :uploaded_ts, :int64, 3
+  end
 end
 
 module Kifu
@@ -82,4 +87,5 @@ module Kifu
   Board = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Board").msgclass
   Kifu = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu").msgclass
   Kifu::Format = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Kifu.Format").enummodule
+  Metadata = Google::Protobuf::DescriptorPool.generated_pool.lookup("kifu.Metadata").msgclass
 end
