@@ -38,13 +38,15 @@
   <% end %>
 </div>
 <% end %>
-<% if login? %>
 <div class="link">
+<% if login? %>
   <a href="logout">logout</a>
   <% if @session.role == :ADMIN %>
   <a href="admin">admin</a>
   <% end %>
-</div>
+<% else %>
+  <a href="login">login</a>
 <% end %>
+</div>
 </body>
 </html>
