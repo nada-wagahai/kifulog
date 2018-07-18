@@ -11,7 +11,7 @@ class EsIndex
     @index = opt[:index]
   end
 
-  def put(kifu)
+  def put(kifu, metadata = Kifu::Metadata.new)
     kifu_doc = Index::Document.new(
       kifu: Index::Kifu.new(
         id: kifu.id,
@@ -21,6 +21,7 @@ class EsIndex
         end_ts: kifu.end_ts,
         board_ids: kifu.board_ids.to_a,
         alias: !kifu.alias.empty?,
+        owner_id: metadata.owner_id,
       )
     )
     kifu_id = "KIFU:%s" % kifu_doc.kifu.id

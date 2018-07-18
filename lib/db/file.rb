@@ -27,6 +27,9 @@ class FileDB
 
     @comment_file = path + "/comment"
     @comment_db = load_db(@comment_file)
+
+    @metadata_file = path + "/kifu_meta"
+    @metadata_db = load_db(@metadata_file)
   end
 
   def put_kifu(kifu)
@@ -136,6 +139,19 @@ class FileDB
   def delete_comment(comment_id)
     @comment_db.delete(comment_id)
     save_db(@comment_file, @comment_db)
+  end
+
+  def put_metadata(metadata)
+    @metadata_db[metadata.kifu_id] = Kifu::Metadata.encode metadata
+    save_db(@metadata_file, @metadata_db)
+  end
+
+  def batch_get_metadata(ids)
+    return [] if ids.empty?
+
+    @metadata_db.values_at(*ids).map {|bytes|
+      bytes.nil? ? nil : Kifu::Metadata.decode(bytes)
+    }
   end
 
   private

@@ -306,11 +306,20 @@ class Server < Sinatra::Base
     end
     boards = kifu.boards!
 
-    file = @@records_dir + '/' + kifu.kifu_id
+    kifu_id = kifu.id
+
+    file = @@records_dir + '/' + kifu_id
     IO.write(file, input)
 
+    metadata = Kifu::Metadata.new(
+      kifu_id: kifu_id,
+      owner_id: @session.account_id,
+      uploaded_ts: Time.now.to_i,
+    )
+
     @@db.put_kifu(kifu)
-    @@index.put(kifu)
+    @@db.put_metadata(metadata)
+    @@index.put(kifu, metadata)
     @@db.put_boards(boards)
 
     redirect back

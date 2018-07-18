@@ -74,6 +74,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :kifu_id, :string, 1
     optional :owner_id, :string, 2
     optional :uploaded_ts, :int64, 3
+    optional :note, :string, 4
   end
 end
 

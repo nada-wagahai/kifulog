@@ -39,7 +39,7 @@ class Kifu::Kifu
     players.select {|p| p.order == :SECOND }
   end
 
-  def kifu_id
+  def kifu_id_old
     str = players.map {|p| p.name}.join("-")
     "%019d:%s" % [start_ts, Digest::MD5.hexdigest(str)]
   end

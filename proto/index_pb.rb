@@ -20,6 +20,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :end_ts, :int64, 5
     repeated :board_ids, :string, 6
     optional :alias, :bool, 7
+    optional :owner_id, :string, 8
   end
   add_message "index.Step" do
     optional :id, :message, 1, "index.Step.StepId"

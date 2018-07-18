@@ -80,4 +80,5 @@ message Metadata {
   string kifu_id = 1;
   string owner_id = 2;
   int64 uploaded_ts = 3;
+  string note = 4;
 }

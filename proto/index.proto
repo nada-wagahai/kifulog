@@ -19,6 +19,7 @@ message Kifu {
   int64 end_ts = 5;
   repeated string board_ids = 6;
   bool alias = 7;
+  string owner_id = 8;
 }
 
 message Step {
