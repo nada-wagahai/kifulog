@@ -182,7 +182,7 @@ div.next_step {
 <% end %>
 <% if login? %>
 <form action="<%= "%s/comment" % params['seq'] %>" method="POST">
-<textarea name="comment"></textarea>
+<textarea name="comment" rows=5 cols=50></textarea>
 <input type="submit"/>
 </form>
 <% end %>
