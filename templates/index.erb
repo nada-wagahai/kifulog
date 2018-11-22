@@ -1,9 +1,10 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset='UTF-8'/>
 <title>棋譜ログ</title>
 <style>
-.index {
+main {
   display: inline-block;
 }
 
@@ -23,20 +24,20 @@
 </style>
 </head>
 <body>
-<div class="index">
+<main>
 <ol>
   <% @index.each do |c| %>
     <li><a href="kifu/<%= c[:id] %>/"><%= title c[:kifu] %></a></li>
   <% end %>
 </ol>
-</div>
+</main>
 <% if !@recent_comments.empty? %>
-<div class="recent_comments">
+<section class="recent_comments">
   <p class="header">最近のコメント</p>
   <% @recent_comments.each do |comment| %>
   <a href="<%= "kifu/%s/%d" % [comment.kifu_id, comment.seq] %>" class="comment"><%= comment.text[0, 20] %></a>
   <% end %>
-</div>
+</section>
 <% end %>
 <div class="link">
 <% if login? %>
