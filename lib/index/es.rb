@@ -46,14 +46,17 @@ class EsIndex
     end
   end
 
-  def search_kifu()
+  def search_kifu(params = {})
+    restrictions = [
+      { exists: { field: "kifu" } },
+      { match: { "kifu.alias": false } },
+    ]
+    restrictions << { match: { "kifu.owner_id": params[:owner] } } if !params[:owner].nil?
+
     query = {
       query: {
         bool: {
-          must: [
-            { exists: { field: "kifu" } },
-            { match: { "kifu.alias": false } },
-          ],
+          must: restrictions,
         },
       },
       size: 100,
@@ -146,6 +149,7 @@ class EsIndex
     mustQueries = []
     mustQueries << { match: { "comment.board_id": params[:board_id] } } unless params[:board_id].nil?
     mustQueries << { match: { "comment.kifu_id": params[:kifu_id] } } unless params[:kifu_id].nil?
+    mustQueries << { match: { "comment.owner_id": params[:owner] } } unless params[:owner].nil?
 
     query = {
       bool: {

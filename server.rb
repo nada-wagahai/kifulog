@@ -275,6 +275,24 @@ class Server < Sinatra::Base
     redirect to("/")
   end
 
+  get '/home' do
+    authorize!
+    not_found if @session.nil?
+
+    ids = @@index.search_kifu(owner: @session.account_id)
+    ks = @@db.batch_get_kifu(ids)
+    @index = ids.zip(ks).map { |id, kifu|
+      {id: id, kifu: kifu}
+    }
+
+    player_map(ks)
+
+    ids = @@index.search_comment(owner: @session.account_id)
+    @comments = @@db.batch_get_comments(ids)
+
+    erb :home
+  end
+
   before "/admin*" do
     authorize!
 
