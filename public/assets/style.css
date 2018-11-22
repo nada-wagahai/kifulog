@@ -1,0 +1,62 @@
+div#kifu--board {
+  display: inline-block;
+}
+
+div#kifu--board table.label-x td {
+  font-size: 12px;
+  border-style: none;
+  width: 29px;
+  text-align: center;
+}
+
+div#kifu--board table.label-y {
+  display: inline-block;
+}
+
+div#kifu--board table.label-y td {
+  font-size: 12px;
+  border-style: none;
+  height: 29px;
+  text-align: center;
+}
+
+div#kifu--board table.board {
+  display: inline-block;
+  border-style: solid;
+  border-color: black;
+  border-spacing: 0;
+}
+
+div#kifu--board table.board td {
+  border-width: 1px;
+  border-style: solid;
+  width: 31px;
+  height: 31px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+div#kifu--board table.board td.second {
+  transform: rotate(180deg);
+}
+
+div#kifu--board table.board td.first {
+}
+
+div#kifu--board table.board td.step {
+  font-weight: bolder;
+  background-color: #C7D1CD;
+}
+
+div#kifu--board table.board td.prev {
+  background-color: #D7E1DD;
+}
+
+div#kifu--board div.prev_step {
+  float: left;
+}
+
+div.kifu--board div.next_step {
+  float: right;
+}

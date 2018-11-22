@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8'/>
+		<title>aaa</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+		<script src="/assets/kifu-for-js-2.0.0.min.js"></script>
+	</head>
+	<body >
+    <h1>hello</h1>
+    <button onClick="load()">hello</button>
+		<script>
+function load() {
+  //$('#aaa').append('<script> KifuForJS.load("/test.kifu") <\/script>');
+  const kifu = KifuForJS.load("/test.kifu", "aaa");
+  //$('#aaa').append('<h2> kifu <\/h2>');
+}
+    </script>
+    <div id="aaa"></div>
+	</body>
+</html>
