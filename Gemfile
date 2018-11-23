@@ -11,3 +11,4 @@ gem "elasticsearch"
 gem "google-protobuf"
 gem 'bcrypt'
 gem 'redis'
+
