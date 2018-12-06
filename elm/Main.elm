@@ -1,4 +1,4 @@
-port module Main exposing (Flags, Model, Msg(..), init, main, subscriptions, update, view)
+module Main exposing (Flags, Model, Msg(..), init, main, subscriptions, update, view)
 
 import Browser
 import Browser.Dom as Dom
@@ -9,7 +9,7 @@ import Html.Events as Events
 import Html.Lazy as Lazy
 import Http
 import Json.Decode as D
-import Kifu.View as Kifu
+import Kifu
 import Task
 import Url
 import Url.Parser as Parser exposing ((</>), Parser)
@@ -65,8 +65,7 @@ subscriptions model =
 
 
 type Msg
-    = Test Int
-    | LinkClicked Browser.UrlRequest
+    = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | KifuMsg Kifu.Msg
     | HttpRes (Result Http.Error String)
@@ -77,9 +76,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Test step ->
-            ( model, Cmd.none )
-
         LinkClicked (Browser.Internal url) ->
             ( { model | route = toRoute url }
             , Nav.pushUrl model.key (Url.toString url)
@@ -89,16 +85,7 @@ update msg model =
             ( model, Nav.load href )
 
         UrlChanged url ->
-            case model.route of
-                Script ->
-                    ( model
-                    , Cmd.batch
-                        [ loadKifu "/test.kifu"
-                        ]
-                    )
-
-                _ ->
-                    ( model, Cmd.none )
+            ( model, Cmd.none )
 
         KifuMsg kifuMsg ->
             let
@@ -122,10 +109,10 @@ update msg model =
                         decoder =
                             D.list <|
                                 D.map4 Kifu.Piece
-                                    (D.field "type" D.string)
+                                    (D.field "type" <| D.map Kifu.pieceFromString D.string)
                                     (D.field "x" D.int)
                                     (D.field "y" D.int)
-                                    (D.field "player" D.string)
+                                    (D.field "player" <| D.map Kifu.playerFromString D.string)
                     in
                     case D.decodeString decoder text of
                         Ok pieces ->
@@ -134,17 +121,11 @@ update msg model =
                         Err _ ->
                             ( model, Cmd.none )
 
-                Err _ ->
+                Err err ->
                     ( model, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
-
-
-port loadKifu : String -> Cmd msg
-
-
-port test : Int -> Cmd msg
 
 
 
@@ -158,7 +139,6 @@ view model =
         [ Tag.ul []
             [ viewLink [] "/"
             , Tag.div [ Attr.id "board" ] []
-            , Tag.button [ Events.onClick (Test 3) ] [ Tag.text "aaaa" ]
             , Tag.button [ Events.onClick (RequestScene "http://localhost:8080/aaa.kifu") ] [ Tag.text "request" ]
             ]
         , Kifu.view model.kifu KifuMsg

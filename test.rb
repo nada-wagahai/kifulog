@@ -15,7 +15,14 @@ class Server < Sinatra::Base
   end
 
   get "/aaa.kifu" do
-    '[{"type":"FU","x":7,"y":6,"player":"FIRST"},{"type":"TO","x":3,"y":7,"player":"SECOND"}]'
+    <<EOS
+[
+  {"type":"FU","x":7,"y":6,"player":"FIRST"},
+  {"type":"TO","x":3,"y":7,"player":"SECOND"},
+  {"type":"HISHA","x":0,"y":0,"player":"SECOND"},
+  {"type":"KAKU","x":0,"y":0,"player":"FIRST"}
+]
+EOS
   end
 
   get %r{(.*)} do |path|
