@@ -4,11 +4,13 @@ module Kifu exposing
     , Piece
     , PieceType(..)
     , Player(..)
+    , Pos
     , init
     , pieceFromString
     , playerFromString
     , update
     , view
+    , viewElm
     )
 
 import Dict exposing (Dict)
@@ -175,10 +177,15 @@ playerFromString str =
             FIRST
 
 
+type alias Pos =
+    { x : Int
+    , y : Int
+    }
+
+
 type alias Piece =
     { type_ : PieceType
-    , x : Int
-    , y : Int
+    , pos : Pos
     , player : Player
     }
 
@@ -186,12 +193,17 @@ type alias Piece =
 pieceMap : List Piece -> Dict ( Int, Int ) Piece
 pieceMap list =
     Dict.fromList <|
-        List.map (\p -> ( ( p.x, p.y ), p )) list
+        List.map (\p -> ( ( p.pos.x, p.pos.y ), p )) list
 
 
 view : Model -> (Msg -> msg) -> Html msg
 view model toMsg =
     Html.map toMsg <| Elm.layout [] <| board model.pieces
+
+
+viewElm : Model -> (Msg -> msg) -> Element msg
+viewElm model toMsg =
+    Elm.map toMsg <| board model.pieces
 
 
 writingModeVirticalRl : Attribute msg
@@ -213,7 +225,7 @@ board pieces =
 
         ( capturedFirst, capturedSecond ) =
             List.partition (\p -> p.player == FIRST) <|
-                List.filter (\p -> p.x == 0 && p.y == 0) pieces
+                List.filter (\p -> p.pos.x == 0 && p.pos.y == 0) pieces
 
         capturedAttrs =
             [ writingModeVirticalRl, Elm.alignTop, Elm.paddingXY 5 15 ]
@@ -251,7 +263,7 @@ field pieces =
             pieceMap pieces
 
         defPiece =
-            Piece NULL 0 0 FIRST
+            Piece NULL { x = 0, y = 0 } FIRST
 
         p x y =
             Maybe.withDefault defPiece <| Dict.get ( x, y ) pMap

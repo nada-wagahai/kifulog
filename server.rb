@@ -131,6 +131,22 @@ class Server < Sinatra::Base
     }
   end
 
+  get '/api/kifu/:kifu_id/:seq' do
+    kifu = @@db.get_kifu(params['kifu_id'])
+    not_found if kifu.nil?
+
+    seq = params['seq'].to_i
+    step = seq != 0 ? kifu.steps[seq-1] : nil
+    board_id = kifu.board_ids[seq]
+
+    board = @@db.get_board(board_id)
+    not_found if board.nil?
+
+    board.step = step
+
+    board.to_json
+  end
+
   get '/kifu/:kifu_id/:seq' do
     authorize!
 
@@ -148,6 +164,7 @@ class Server < Sinatra::Base
     board = @@db.get_board(board_id)
     not_found if board.nil?
 
+=begin
     steps = @@index.search_step(board_id)
     step_ids = steps.select {|step_id|
       step_id.kifu_id != params['kifu_id']
@@ -164,16 +181,20 @@ class Server < Sinatra::Base
 
     account_ids = comments.select{|c|!c.nil?}.map {|c| c.owner_id }
     @owner_map = @@db.batch_get_account(account_ids).map {|a| [a.id, a.name]}.to_h
+=end
 
-    erb :scene, :locals => {
-      captured_first: captured_first,
-      captured_second: captured_second,
-      pieces: pieces,
-      kifu: kifu,
-      step: step,
-      steps: steps,
-      comments: comments,
-    }
+    @kifu=params['kifu_id']
+    @seq=params['seq']
+   # :locals => {
+      #captured_first: captured_first,
+      #captured_second: captured_second,
+      #pieces: pieces,
+      #kifu: kifu,
+      #step: step,
+      #steps: steps,
+      #comments: comments,
+   # }
+    erb :scene
   end
 
   post '/kifu/:kifu_id/:seq/comment' do

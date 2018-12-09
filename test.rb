@@ -16,12 +16,12 @@ class Server < Sinatra::Base
 
   get "/aaa.kifu" do
     <<EOS
-[
-  {"type":"FU","x":7,"y":6,"player":"FIRST"},
-  {"type":"TO","x":3,"y":7,"player":"SECOND"},
-  {"type":"HISHA","x":0,"y":0,"player":"SECOND"},
-  {"type":"KAKU","x":0,"y":0,"player":"FIRST"}
-]
+{"pieces":[
+  {"type":"FU","pos":{"x":7,"y":6}},
+  {"type":"TO","pos":{"x":3,"y":7},"order":"SECOND"},
+  {"type":"HISHA","pos":{"x":0,"y":0},"order":"SECOND"},
+  {"type":"KAKU","pos":{"x":0,"y":0},"order":"FIRST"}
+]}
 EOS
   end
 

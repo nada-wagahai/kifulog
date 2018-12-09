@@ -3,9 +3,10 @@ module Main exposing (Flags, Model, Msg(..), init, main, subscriptions, update, 
 import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Nav
+import Element as Elm exposing (Attribute, Element)
+import Element.Events as Event
 import Html as Tag exposing (Attribute, Html)
 import Html.Attributes as Attr
-import Html.Events as Events
 import Html.Lazy as Lazy
 import Http
 import Json.Decode as D
@@ -32,8 +33,7 @@ main =
 
 
 type alias Flags =
-    { path : String
-    }
+    ()
 
 
 type alias Model =
@@ -46,9 +46,7 @@ type alias Model =
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model 0 key (toRoute url) Kifu.init
-    , Nav.pushUrl key (Url.toString url)
-    )
+    update (UrlChanged url) <| Model 0 key (toRoute url) Kifu.init
 
 
 
@@ -68,16 +66,46 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | KifuMsg Kifu.Msg
-    | HttpRes (Result Http.Error String)
-    | RequestScene String
+    | ApiRequest KifuRequest
+    | ApiResponse KifuRequest (Result Http.Error String)
     | NopMsg
+
+
+piece : Kifu.PieceType -> ( Int, Int ) -> Kifu.Player -> Kifu.Piece
+piece t ( x, y ) o =
+    Kifu.Piece t { x = x, y = y } o
+
+
+pos : D.Decoder ( Int, Int )
+pos =
+    D.map2 Tuple.pair (D.field "x" D.int) (D.field "y" D.int)
+
+
+decoder : D.Decoder (List Kifu.Piece)
+decoder =
+    D.field "pieces" <|
+        D.list <|
+            D.map3 piece
+                (D.map Kifu.pieceFromString <|
+                    D.field "type" D.string
+                )
+                (D.field "pos" pos)
+                (D.map Kifu.playerFromString <|
+                    D.map (Maybe.withDefault "FIRST") <|
+                        D.maybe <|
+                            D.field "order" D.string
+                )
+
+
+type KifuRequest
+    = KifuScene String Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LinkClicked (Browser.Internal url) ->
-            ( { model | route = toRoute url }
+            ( model
             , Nav.pushUrl model.key (Url.toString url)
             )
 
@@ -85,7 +113,19 @@ update msg model =
             ( model, Nav.load href )
 
         UrlChanged url ->
-            ( model, Cmd.none )
+            let
+                route =
+                    toRoute url
+
+                m =
+                    { model | route = route }
+            in
+            case route of
+                Step kifuId step ->
+                    update (ApiRequest <| KifuScene kifuId step) m
+
+                _ ->
+                    ( m, Cmd.none )
 
         KifuMsg kifuMsg ->
             let
@@ -94,35 +134,38 @@ update msg model =
             in
             ( { model | kifu = kModel }, Cmd.none )
 
-        RequestScene url ->
-            ( model
-            , Http.get
-                { url = url
-                , expect = Http.expectString HttpRes
-                }
-            )
+        ApiRequest req ->
+            case req of
+                KifuScene id step ->
+                    ( model
+                    , Http.get
+                        { url = "/api/kifu/" ++ id ++ "/" ++ String.fromInt step
+                        , expect = Http.expectString (ApiResponse req)
+                        }
+                    )
 
-        HttpRes result ->
-            case result of
-                Ok text ->
-                    let
-                        decoder =
-                            D.list <|
-                                D.map4 Kifu.Piece
-                                    (D.field "type" <| D.map Kifu.pieceFromString D.string)
-                                    (D.field "x" D.int)
-                                    (D.field "y" D.int)
-                                    (D.field "player" <| D.map Kifu.playerFromString D.string)
-                    in
-                    case D.decodeString decoder text of
-                        Ok pieces ->
-                            update (KifuMsg <| Kifu.Scene pieces) model
+        ApiResponse res result ->
+            case res of
+                KifuScene _ _ ->
+                    case result of
+                        Ok text ->
+                            case D.decodeString decoder text of
+                                Ok pieces ->
+                                    update (KifuMsg <| Kifu.Scene pieces) model
 
-                        Err _ ->
+                                Err err ->
+                                    let
+                                        _ =
+                                            Debug.log "json" err
+                                    in
+                                    ( model, Cmd.none )
+
+                        Err err ->
+                            let
+                                _ =
+                                    Debug.log "err" err
+                            in
                             ( model, Cmd.none )
-
-                Err err ->
-                    ( model, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -132,17 +175,58 @@ update msg model =
 -- VIEW
 
 
+header : Model -> Element Msg
+header model =
+    Elm.row []
+        --[ Elm.link [] { url = "../..", label = Elm.text "棋譜一覧" }
+        [ Elm.el [ Event.onClick (LinkClicked <| Browser.External "../..") ] <| Elm.text "棋譜一覧"
+        ]
+
+
+board : Model -> String -> Int -> Element Msg
+board model kifuId step =
+    Elm.column [ Elm.spacing 10 ]
+        [ Kifu.viewElm model.kifu KifuMsg
+        , Elm.row [ Elm.width Elm.fill ]
+            [ Elm.link []
+                { url = String.fromInt (step - 1)
+                , label = Elm.text "前"
+                }
+            , Elm.link [ Elm.alignRight ]
+                { url = String.fromInt (step + 1)
+                , label = Elm.text "次"
+                }
+            ]
+        , Elm.link [] { url = ".", label = Elm.text "戻る" }
+        ]
+
+
+content : Model -> Element Msg
+content model =
+    case model.route of
+        Step kifuId step ->
+            board model kifuId step
+
+        Kifu kifuId ->
+            board model kifuId 0
+
+        _ ->
+            Elm.text "NotFound"
+
+
+body : Model -> Html Msg
+body model =
+    Elm.layout [] <|
+        Elm.column []
+            [ header model
+            , Elm.el [] <| content model
+            ]
+
+
 view : Model -> Browser.Document Msg
 view model =
-    { title = "test"
-    , body =
-        [ Tag.ul []
-            [ viewLink [] "/"
-            , Tag.div [ Attr.id "board" ] []
-            , Tag.button [ Events.onClick (RequestScene "http://localhost:8080/aaa.kifu") ] [ Tag.text "request" ]
-            ]
-        , Kifu.view model.kifu KifuMsg
-        ]
+    { title = "棋譜ログ"
+    , body = [ body model ]
     }
 
 
@@ -156,24 +240,21 @@ viewLink attrs path =
 
 
 type Route
-    = Home
-    | Counter
+    = Index
     | Kifu String
     | Step String Int
-    | Script
+    | NotFound
 
 
 routeParser : Parser (Route -> a) a
 routeParser =
     Parser.oneOf
-        [ Parser.map Home Parser.top
-        , Parser.map Counter (Parser.s "counter")
+        [ Parser.map Index Parser.top
         , Parser.map Kifu (Parser.s "kifu" </> Parser.string)
         , Parser.map Step (Parser.s "kifu" </> Parser.string </> Parser.int)
-        , Parser.map Script (Parser.s "script")
         ]
 
 
 toRoute : Url.Url -> Route
 toRoute url =
-    Maybe.withDefault Home (Parser.parse routeParser url)
+    Maybe.withDefault NotFound (Parser.parse routeParser url)

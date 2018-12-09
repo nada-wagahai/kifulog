@@ -54,6 +54,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "kifu.Board" do
     repeated :pieces, :message, 1, "kifu.Piece"
+    optional :step, :message, 2, "kifu.Step"
   end
   add_message "kifu.Kifu" do
     optional :start_ts, :int64, 1
