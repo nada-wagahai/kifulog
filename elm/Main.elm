@@ -5,6 +5,7 @@ import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Element as Elm exposing (Attribute, Element)
 import Element.Events as Event
+import Element.Input as Input
 import Html as Tag exposing (Attribute, Html)
 import Html.Attributes as Attr
 import Html.Lazy as Lazy
@@ -36,17 +37,31 @@ type alias Flags =
     ()
 
 
+type alias Step =
+    { pos : Maybe Kifu.Pos
+    , prev : Maybe Kifu.Pos
+    , finished : Bool
+    }
+
+
 type alias Model =
     { count : Int
     , key : Nav.Key
     , route : Route
     , kifu : Kifu.Model
+    , step : Step
     }
 
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    update (UrlChanged url) <| Model 0 key (toRoute url) Kifu.init
+    update (UrlChanged url)
+        { count = 0
+        , key = key
+        , route = toRoute url
+        , kifu = Kifu.init
+        , step = Step Nothing Nothing False
+        }
 
 
 
@@ -71,30 +86,48 @@ type Msg
     | NopMsg
 
 
-piece : Kifu.PieceType -> ( Int, Int ) -> Kifu.Player -> Kifu.Piece
-piece t ( x, y ) o =
-    Kifu.Piece t { x = x, y = y } o
+fieldMaybe : String -> D.Decoder a -> D.Decoder (Maybe a)
+fieldMaybe label =
+    D.maybe << D.field label
 
 
-pos : D.Decoder ( Int, Int )
-pos =
-    D.map2 Tuple.pair (D.field "x" D.int) (D.field "y" D.int)
+fieldDefault : String -> a -> D.Decoder a -> D.Decoder a
+fieldDefault label a =
+    D.map (Maybe.withDefault a) << fieldMaybe label
 
 
-decoder : D.Decoder (List Kifu.Piece)
+posDecoder : String -> D.Decoder (Maybe Kifu.Pos)
+posDecoder label =
+    let
+        f x y =
+            if x == 0 || y == 0 then
+                Nothing
+
+            else
+                Just { x = x, y = y }
+    in
+    D.map (Maybe.andThen identity)
+        << fieldMaybe label
+    <|
+        D.map2 f (D.field "x" D.int) (D.field "y" D.int)
+
+
+decoder : D.Decoder ( Kifu.Scene, Step )
 decoder =
-    D.field "pieces" <|
-        D.list <|
-            D.map3 piece
-                (D.map Kifu.pieceFromString <|
-                    D.field "type" D.string
-                )
-                (D.field "pos" pos)
-                (D.map Kifu.playerFromString <|
-                    D.map (Maybe.withDefault "FIRST") <|
-                        D.maybe <|
-                            D.field "order" D.string
-                )
+    D.map2 (\ps step -> ( { pieces = ps, pos = step.pos, prev = step.prev }, step ))
+        (D.field "pieces" <|
+            D.list <|
+                D.map3 Kifu.Piece
+                    (D.map Kifu.pieceFromString <| D.field "type" D.string)
+                    (posDecoder "pos")
+                    (D.map Kifu.playerFromString <| fieldDefault "order" "FIRST" D.string)
+        )
+        (fieldDefault "step" (Step Nothing Nothing False) <|
+            D.map3 Step
+                (posDecoder "pos")
+                (posDecoder "prev")
+                (fieldDefault "finished" False D.bool)
+        )
 
 
 type KifuRequest
@@ -106,11 +139,11 @@ update msg model =
     case msg of
         LinkClicked (Browser.Internal url) ->
             ( model
-            , Nav.pushUrl model.key (Url.toString url)
+            , Nav.pushUrl model.key (Url.toString <| Debug.log "url" url)
             )
 
         LinkClicked (Browser.External href) ->
-            ( model, Nav.load href )
+            ( model, Nav.load <| Debug.log "href" href )
 
         UrlChanged url ->
             let
@@ -121,8 +154,11 @@ update msg model =
                     { model | route = route }
             in
             case route of
-                Step kifuId step ->
-                    update (ApiRequest <| KifuScene kifuId step) m
+                Scene kifuId seq ->
+                    update (ApiRequest <| KifuScene kifuId seq) m
+
+                Kifu kifuId ->
+                    update (ApiRequest <| KifuScene kifuId 0) m
 
                 _ ->
                     ( m, Cmd.none )
@@ -150,12 +186,14 @@ update msg model =
                     case result of
                         Ok text ->
                             case D.decodeString decoder text of
-                                Ok pieces ->
-                                    update (KifuMsg <| Kifu.Scene pieces) model
+                                Ok ( scene, step ) ->
+                                    update
+                                        (KifuMsg <| Kifu.UpdateScene scene)
+                                        { model | step = step }
 
                                 Err err ->
                                     let
-                                        _ =
+                                        a_ =
                                             Debug.log "json" err
                                     in
                                     ( model, Cmd.none )
@@ -184,28 +222,42 @@ header model =
 
 
 board : Model -> String -> Int -> Element Msg
-board model kifuId step =
+board model kifuId seq =
     Elm.column [ Elm.spacing 10 ]
         [ Kifu.viewElm model.kifu KifuMsg
-        , Elm.row [ Elm.width Elm.fill ]
-            [ Elm.link []
-                { url = String.fromInt (step - 1)
-                , label = Elm.text "前"
-                }
-            , Elm.link [ Elm.alignRight ]
-                { url = String.fromInt (step + 1)
-                , label = Elm.text "次"
-                }
-            ]
-        , Elm.link [] { url = ".", label = Elm.text "戻る" }
+        , Elm.row [ Elm.width Elm.fill ] <|
+            List.concat
+                [ [ Input.button []
+                        { onPress =
+                            Maybe.map (LinkClicked << Browser.Internal) <|
+                                Url.fromString <|
+                                    String.fromInt (seq - 1)
+                        , label = Elm.text "前"
+                        }
+                  ]
+                , [ Input.button []
+                        { onPress = Maybe.map (LinkClicked << Browser.Internal) <| Url.fromString <| String.fromInt (seq + 1)
+                        , label = Elm.text "次"
+                        }
+                  ]
+                , if model.step.finished then
+                    []
+
+                  else
+                    [ Elm.link [ Elm.alignRight ]
+                        { url = String.fromInt (seq + 1)
+                        , label = Elm.text "次"
+                        }
+                    ]
+                ]
         ]
 
 
 content : Model -> Element Msg
 content model =
     case model.route of
-        Step kifuId step ->
-            board model kifuId step
+        Scene kifuId seq ->
+            board model kifuId seq
 
         Kifu kifuId ->
             board model kifuId 0
@@ -242,7 +294,7 @@ viewLink attrs path =
 type Route
     = Index
     | Kifu String
-    | Step String Int
+    | Scene String Int
     | NotFound
 
 
@@ -251,7 +303,7 @@ routeParser =
     Parser.oneOf
         [ Parser.map Index Parser.top
         , Parser.map Kifu (Parser.s "kifu" </> Parser.string)
-        , Parser.map Step (Parser.s "kifu" </> Parser.string </> Parser.int)
+        , Parser.map Scene (Parser.s "kifu" </> Parser.string </> Parser.int)
         ]
 
 

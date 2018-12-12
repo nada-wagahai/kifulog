@@ -5,6 +5,7 @@ module Kifu exposing
     , PieceType(..)
     , Player(..)
     , Pos
+    , Scene
     , init
     , pieceFromString
     , playerFromString
@@ -24,24 +25,35 @@ import Html.Attributes as Attr
 
 init : Model
 init =
-    { pieces = []
+    { scene =
+        { pieces = []
+        , pos = Nothing
+        , prev = Nothing
+        }
     }
 
 
 type alias Model =
+    { scene : Scene
+    }
+
+
+type alias Scene =
     { pieces : List Piece
+    , pos : Maybe Pos
+    , prev : Maybe Pos
     }
 
 
 type Msg
-    = Scene (List Piece)
+    = UpdateScene Scene
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Scene pieces ->
-            ( { model | pieces = pieces }
+        UpdateScene scene ->
+            ( { model | scene = scene }
             , Cmd.none
             )
 
@@ -185,7 +197,7 @@ type alias Pos =
 
 type alias Piece =
     { type_ : PieceType
-    , pos : Pos
+    , pos : Maybe Pos
     , player : Player
     }
 
@@ -193,17 +205,19 @@ type alias Piece =
 pieceMap : List Piece -> Dict ( Int, Int ) Piece
 pieceMap list =
     Dict.fromList <|
-        List.map (\p -> ( ( p.pos.x, p.pos.y ), p )) list
+        List.filterMap
+            (\p -> Maybe.map (\pos -> ( ( pos.x, pos.y ), p )) p.pos)
+            list
 
 
 view : Model -> (Msg -> msg) -> Html msg
 view model toMsg =
-    Html.map toMsg <| Elm.layout [] <| board model.pieces
+    Html.map toMsg <| Elm.layout [] <| board model.scene
 
 
 viewElm : Model -> (Msg -> msg) -> Element msg
 viewElm model toMsg =
-    Elm.map toMsg <| board model.pieces
+    Elm.map toMsg <| board model.scene
 
 
 writingModeVirticalRl : Attribute msg
@@ -211,8 +225,21 @@ writingModeVirticalRl =
     Elm.htmlAttribute <| Attr.style "writing-mode" "vertical-rl"
 
 
-board : List Piece -> Element Msg
-board pieces =
+capturedAttrs : Player -> List (Attribute msg)
+capturedAttrs player =
+    let
+        attrs =
+            [ writingModeVirticalRl, Elm.paddingXY 5 15 ]
+    in
+    if player == FIRST then
+        Elm.alignBottom :: attrs
+
+    else
+        Elm.rotate pi :: Elm.alignTop :: attrs
+
+
+board : Scene -> Element Msg
+board scene =
     let
         fontSize =
             Font.size 12
@@ -225,13 +252,10 @@ board pieces =
 
         ( capturedFirst, capturedSecond ) =
             List.partition (\p -> p.player == FIRST) <|
-                List.filter (\p -> p.pos.x == 0 && p.pos.y == 0) pieces
-
-        capturedAttrs =
-            [ writingModeVirticalRl, Elm.alignTop, Elm.paddingXY 5 15 ]
+                List.filter (\p -> p.pos == Nothing) scene.pieces
     in
     Elm.row []
-        [ Elm.el capturedAttrs <|
+        [ Elm.el (capturedAttrs SECOND) <|
             Elm.text <|
                 String.join "" <|
                     "☖持駒: "
@@ -242,13 +266,13 @@ board pieces =
                     List.reverse <|
                         List.range 1 9
             , Elm.row []
-                [ field pieces
+                [ field scene.pieces scene.pos scene.prev
                 , Elm.column [] <|
                     List.map (headColumn << Elm.text << String.fromList << List.singleton) <|
                         String.toList "一二三四五六七八九"
                 ]
             ]
-        , Elm.el capturedAttrs <|
+        , Elm.el (capturedAttrs FIRST) <|
             Elm.text <|
                 String.join "" <|
                     "☗持駒: "
@@ -256,14 +280,24 @@ board pieces =
         ]
 
 
-field : List Piece -> Element msg
-field pieces =
+alt : Maybe a -> Maybe a -> Maybe a
+alt ma mb =
+    case ma of
+        Just _ ->
+            ma
+
+        Nothing ->
+            mb
+
+
+field : List Piece -> Maybe Pos -> Maybe Pos -> Element msg
+field pieces curr prev =
     let
         pMap =
             pieceMap pieces
 
         defPiece =
-            Piece NULL { x = 0, y = 0 } FIRST
+            Piece NULL Nothing FIRST
 
         p x y =
             Maybe.withDefault defPiece <| Dict.get ( x, y ) pMap
@@ -278,9 +312,40 @@ field pieces =
                                 let
                                     piece =
                                         p x y
+
+                                    bgcolor : Maybe Pos -> Elm.Color -> Maybe Elm.Color
+                                    bgcolor mpos color =
+                                        Maybe.andThen
+                                            (\pos ->
+                                                if x == pos.x && y == pos.y then
+                                                    Just color
+
+                                                else
+                                                    Nothing
+                                            )
+                                            mpos
+
+                                    currColor =
+                                        Elm.rgb255 199 209 205
+
+                                    prevColor =
+                                        Elm.rgb255 215 225 221
+
+                                    defColor =
+                                        Elm.rgb 1 1 1
+
+                                    bg : Maybe Pos -> Maybe Pos -> Attribute msg
+                                    bg mpos mprev =
+                                        Background.color <|
+                                            Maybe.withDefault defColor <|
+                                                alt (bgcolor mpos currColor) (bgcolor mprev prevColor)
                                 in
-                                Elm.el (pieceAttrs piece.player) <|
-                                    Elm.el [ Elm.centerX, Elm.centerY ] <|
+                                Elm.el (bg curr prev :: pieceAttrs piece.player) <|
+                                    Elm.el
+                                        [ Elm.centerX
+                                        , Elm.centerY
+                                        ]
+                                    <|
                                         Elm.text <|
                                             pieceText piece.type_
                             )
