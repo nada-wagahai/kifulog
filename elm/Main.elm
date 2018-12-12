@@ -227,19 +227,15 @@ board model kifuId seq =
         [ Kifu.viewElm model.kifu KifuMsg
         , Elm.row [ Elm.width Elm.fill ] <|
             List.concat
-                [ [ Input.button []
-                        { onPress =
-                            Maybe.map (LinkClicked << Browser.Internal) <|
-                                Url.fromString <|
-                                    String.fromInt (seq - 1)
+                [ if seq == 0 then
+                    []
+
+                  else
+                    [ Elm.link []
+                        { url = String.fromInt (seq - 1)
                         , label = Elm.text "前"
                         }
-                  ]
-                , [ Input.button []
-                        { onPress = Maybe.map (LinkClicked << Browser.Internal) <| Url.fromString <| String.fromInt (seq + 1)
-                        , label = Elm.text "次"
-                        }
-                  ]
+                    ]
                 , if model.step.finished then
                     []
 
