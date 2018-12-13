@@ -1,4 +1,4 @@
-module Kifu exposing
+module Kifu.Board exposing
     ( Model
     , Msg(..)
     , Piece

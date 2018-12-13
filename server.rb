@@ -131,6 +131,15 @@ class Server < Sinatra::Base
     }
   end
 
+  get '/api/kifu/:kifu_id' do
+    kifu = @@db.get_kifu(params['kifu_id'])
+    not_found if kifu.nil?
+
+    # player mask
+
+    kifu.to_json
+  end
+
   get '/api/kifu/:kifu_id/:seq' do
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?

@@ -11,7 +11,7 @@ import Html.Attributes as Attr
 import Html.Lazy as Lazy
 import Http
 import Json.Decode as D
-import Kifu
+import Kifu.Board as KB
 import Task
 import Url
 import Url.Parser as Parser exposing ((</>), Parser)
@@ -40,25 +40,25 @@ type alias Flags =
 type alias Step =
     { curr :
         Maybe
-            { pos : Kifu.Pos
-            , piece : Kifu.PieceType
+            { pos : KB.Pos
+            , piece : KB.PieceType
             }
-    , player : Kifu.Player
-    , prev : Maybe Kifu.Pos
+    , player : KB.Player
+    , prev : Maybe KB.Pos
     , finished : Bool
     }
 
 
 initStep : Step
 initStep =
-    Step Nothing Kifu.FIRST Nothing False
+    Step Nothing KB.FIRST Nothing False
 
 
 type alias Model =
     { count : Int
     , key : Nav.Key
     , route : Route
-    , kifu : Kifu.Model
+    , board : KB.Model
     , step : Step
     }
 
@@ -69,7 +69,7 @@ init flags url key =
         { count = 0
         , key = key
         , route = toRoute url
-        , kifu = Kifu.init
+        , board = KB.init
         , step = initStep
         }
 
@@ -90,7 +90,7 @@ subscriptions model =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
-    | KifuMsg Kifu.Msg
+    | KifuMsg KB.Msg
     | ApiRequest KifuRequest
     | ApiResponse KifuRequest (Result Http.Error String)
     | NopMsg
@@ -106,7 +106,7 @@ fieldDefault label a =
     D.map (Maybe.withDefault a) << fieldMaybe label
 
 
-posDecoder : String -> D.Decoder (Maybe Kifu.Pos)
+posDecoder : String -> D.Decoder (Maybe KB.Pos)
 posDecoder label =
     let
         f x y =
@@ -122,7 +122,7 @@ posDecoder label =
         D.map2 f (D.field "x" D.int) (D.field "y" D.int)
 
 
-decoder : D.Decoder ( Kifu.Scene, Step )
+decoder : D.Decoder ( KB.Scene, Step )
 decoder =
     D.map2
         (\ps step ->
@@ -135,18 +135,18 @@ decoder =
         )
         (D.field "pieces" <|
             D.list <|
-                D.map3 Kifu.Piece
-                    (D.map Kifu.pieceFromString <| D.field "type" D.string)
+                D.map3 KB.Piece
+                    (D.map KB.pieceFromString <| D.field "type" D.string)
                     (posDecoder "pos")
-                    (D.map Kifu.playerFromString <| fieldDefault "order" "FIRST" D.string)
+                    (D.map KB.playerFromString <| fieldDefault "order" "FIRST" D.string)
         )
         (fieldDefault "step" initStep <|
             D.map4 Step
                 (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
-                    (D.map Kifu.pieceFromString <| fieldDefault "piece" "NULL" D.string)
+                    (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
                     (posDecoder "pos")
                 )
-                (D.map Kifu.playerFromString <| fieldDefault "player" "FIRST" D.string)
+                (D.map KB.playerFromString <| fieldDefault "player" "FIRST" D.string)
                 (posDecoder "prev")
                 (fieldDefault "finished" False D.bool)
         )
@@ -188,9 +188,9 @@ update msg model =
         KifuMsg kifuMsg ->
             let
                 ( kModel, kMsg ) =
-                    Kifu.update kifuMsg model.kifu
+                    KB.update kifuMsg model.board
             in
-            ( { model | kifu = kModel }, Cmd.none )
+            ( { model | board = kModel }, Cmd.none )
 
         ApiRequest req ->
             case req of
@@ -210,7 +210,7 @@ update msg model =
                             case D.decodeString decoder text of
                                 Ok ( scene, step ) ->
                                     update
-                                        (KifuMsg <| Kifu.UpdateScene scene)
+                                        (KifuMsg <| KB.UpdateScene scene)
                                         { model | step = step }
 
                                 Err err ->
@@ -243,13 +243,18 @@ header model =
         ]
 
 
+playersView : Model -> Element Msg
+playersView model =
+    Elm.el [] <| Elm.text "players"
+
+
 stepView : Step -> Int -> Element msg
 stepView step seq =
     Elm.el [] <|
         Elm.text <|
             String.fromInt seq
                 ++ "手 "
-                ++ Kifu.playerToSymbol step.player
+                ++ KB.playerToSymbol step.player
                 ++ Maybe.withDefault
                     (if step.finished then
                         "投了"
@@ -259,18 +264,19 @@ stepView step seq =
                     )
                     (Maybe.map
                         (\c ->
-                            Kifu.posToString c.pos
-                                ++ Kifu.pieceText c.piece
+                            KB.posToString c.pos
+                                ++ KB.pieceText c.piece
                                 ++ " まで"
                         )
                         step.curr
                     )
 
 
-board : Model -> String -> Int -> Element Msg
-board model kifuId seq =
+boardView : Model -> String -> Int -> Element Msg
+boardView model kifuId seq =
     Elm.column [ Elm.spacing 10 ]
-        [ Kifu.viewElm model.kifu KifuMsg
+        [ playersView model
+        , KB.viewElm model.board KifuMsg
         , stepView model.step seq
         , Elm.row [ Elm.width Elm.fill ] <|
             List.concat
@@ -300,10 +306,10 @@ content : Model -> Element Msg
 content model =
     case model.route of
         Scene kifuId seq ->
-            board model kifuId seq
+            boardView model kifuId seq
 
         Kifu kifuId ->
-            board model kifuId 0
+            boardView model kifuId 0
 
         _ ->
             Elm.text "NotFound"
