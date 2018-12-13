@@ -38,17 +38,20 @@ type alias Flags =
 
 
 type alias Step =
-    { pos : Maybe Kifu.Pos
-    , prev : Maybe Kifu.Pos
+    { curr :
+        Maybe
+            { pos : Kifu.Pos
+            , piece : Kifu.PieceType
+            }
     , player : Kifu.Player
-    , piece : Kifu.PieceType
+    , prev : Maybe Kifu.Pos
     , finished : Bool
     }
 
 
 initStep : Step
 initStep =
-    Step Nothing Nothing Kifu.FIRST Kifu.NULL False
+    Step Nothing Kifu.FIRST Nothing False
 
 
 type alias Model =
@@ -121,7 +124,15 @@ posDecoder label =
 
 decoder : D.Decoder ( Kifu.Scene, Step )
 decoder =
-    D.map2 (\ps step -> ( { pieces = ps, pos = step.pos, prev = step.prev }, step ))
+    D.map2
+        (\ps step ->
+            ( { pieces = ps
+              , pos = Maybe.map (\c -> c.pos) step.curr
+              , prev = step.prev
+              }
+            , step
+            )
+        )
         (D.field "pieces" <|
             D.list <|
                 D.map3 Kifu.Piece
@@ -130,11 +141,13 @@ decoder =
                     (D.map Kifu.playerFromString <| fieldDefault "order" "FIRST" D.string)
         )
         (fieldDefault "step" initStep <|
-            D.map5 Step
-                (posDecoder "pos")
-                (posDecoder "prev")
+            D.map4 Step
+                (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
+                    (D.map Kifu.pieceFromString <| fieldDefault "piece" "NULL" D.string)
+                    (posDecoder "pos")
+                )
                 (D.map Kifu.playerFromString <| fieldDefault "player" "FIRST" D.string)
-                (D.map Kifu.pieceFromString <| fieldDefault "piece" "NULL" D.string)
+                (posDecoder "prev")
                 (fieldDefault "finished" False D.bool)
         )
 
@@ -237,8 +250,21 @@ stepView step seq =
             String.fromInt seq
                 ++ "手 "
                 ++ Kifu.playerToSymbol step.player
-                ++ Maybe.withDefault "" (Maybe.map Kifu.posToString step.pos)
-                ++ Kifu.pieceText step.piece
+                ++ Maybe.withDefault
+                    (if step.finished then
+                        "投了"
+
+                     else
+                        ""
+                    )
+                    (Maybe.map
+                        (\c ->
+                            Kifu.posToString c.pos
+                                ++ Kifu.pieceText c.piece
+                                ++ " まで"
+                        )
+                        step.curr
+                    )
 
 
 board : Model -> String -> Int -> Element Msg
