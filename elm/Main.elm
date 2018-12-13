@@ -40,8 +40,15 @@ type alias Flags =
 type alias Step =
     { pos : Maybe Kifu.Pos
     , prev : Maybe Kifu.Pos
+    , player : Kifu.Player
+    , piece : Kifu.PieceType
     , finished : Bool
     }
+
+
+initStep : Step
+initStep =
+    Step Nothing Nothing Kifu.FIRST Kifu.NULL False
 
 
 type alias Model =
@@ -60,7 +67,7 @@ init flags url key =
         , key = key
         , route = toRoute url
         , kifu = Kifu.init
-        , step = Step Nothing Nothing False
+        , step = initStep
         }
 
 
@@ -122,10 +129,12 @@ decoder =
                     (posDecoder "pos")
                     (D.map Kifu.playerFromString <| fieldDefault "order" "FIRST" D.string)
         )
-        (fieldDefault "step" (Step Nothing Nothing False) <|
-            D.map3 Step
+        (fieldDefault "step" initStep <|
+            D.map5 Step
                 (posDecoder "pos")
                 (posDecoder "prev")
+                (D.map Kifu.playerFromString <| fieldDefault "player" "FIRST" D.string)
+                (D.map Kifu.pieceFromString <| fieldDefault "piece" "NULL" D.string)
                 (fieldDefault "finished" False D.bool)
         )
 
@@ -221,10 +230,22 @@ header model =
         ]
 
 
+stepView : Step -> Int -> Element msg
+stepView step seq =
+    Elm.el [] <|
+        Elm.text <|
+            String.fromInt seq
+                ++ "手 "
+                ++ Kifu.playerToSymbol step.player
+                ++ Maybe.withDefault "" (Maybe.map Kifu.posToString step.pos)
+                ++ Kifu.pieceText step.piece
+
+
 board : Model -> String -> Int -> Element Msg
 board model kifuId seq =
     Elm.column [ Elm.spacing 10 ]
         [ Kifu.viewElm model.kifu KifuMsg
+        , stepView model.step seq
         , Elm.row [ Elm.width Elm.fill ] <|
             List.concat
                 [ if seq == 0 then

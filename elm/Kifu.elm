@@ -8,7 +8,10 @@ module Kifu exposing
     , Scene
     , init
     , pieceFromString
+    , pieceText
     , playerFromString
+    , playerToSymbol
+    , posToString
     , update
     , view
     , viewElm
@@ -179,6 +182,16 @@ type Player
     | SECOND
 
 
+playerToSymbol : Player -> String
+playerToSymbol player =
+    case player of
+        FIRST ->
+            "☗"
+
+        SECOND ->
+            "☖"
+
+
 playerFromString : String -> Player
 playerFromString str =
     case str of
@@ -193,6 +206,21 @@ type alias Pos =
     { x : Int
     , y : Int
     }
+
+
+posToString : Pos -> String
+posToString pos =
+    let
+        xs =
+            List.map String.fromChar <| String.toList "0123456789"
+
+        ys =
+            List.map String.fromChar <| String.toList "0一二三四五六七八九"
+
+        toStr i is =
+            Maybe.withDefault "" <| List.head <| List.drop i is
+    in
+    toStr pos.x xs ++ toStr pos.y ys
 
 
 type alias Piece =
