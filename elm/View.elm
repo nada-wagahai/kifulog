@@ -7,8 +7,9 @@ import Element.Input as Input
 import Html as Tag exposing (Attribute, Html)
 import Html.Attributes as Attr
 import Kifu.Board as KB
-import Model exposing (Model, Step)
+import Model exposing (Game, Model, Player, Step, Timestamp)
 import Route
+import Time
 import Update as Msg exposing (Msg)
 
 
@@ -20,9 +21,16 @@ header model =
         ]
 
 
-playersView : Model -> Element Msg
-playersView model =
-    Elm.el [] <| Elm.text "players"
+playersView : List Player -> Element Msg
+playersView players =
+    let
+        ( firsts, seconds ) =
+            List.partition (\p -> p.order == KB.FIRST) players
+    in
+    Elm.column []
+        [ Elm.text <| "☗先手: " ++ String.join ", " (List.map (\p -> p.name) firsts)
+        , Elm.text <| "☖後手: " ++ String.join ", " (List.map (\p -> p.name) seconds)
+        ]
 
 
 stepView : Step -> Int -> Element msg
@@ -53,10 +61,103 @@ stepView step seq =
                         )
 
 
+monthNumber : Time.Month -> Int
+monthNumber month =
+    case month of
+        Time.Jan ->
+            1
+
+        Time.Feb ->
+            2
+
+        Time.Mar ->
+            3
+
+        Time.Apr ->
+            4
+
+        Time.May ->
+            5
+
+        Time.Jun ->
+            6
+
+        Time.Jul ->
+            7
+
+        Time.Aug ->
+            8
+
+        Time.Sep ->
+            9
+
+        Time.Oct ->
+            10
+
+        Time.Nov ->
+            11
+
+        Time.Dec ->
+            12
+
+
+zoneStr : Time.ZoneName -> String
+zoneStr zone =
+    case zone of
+        Time.Name str ->
+            "(" ++ str ++ ")"
+
+        Time.Offset min ->
+            (if min < 0 then
+                ""
+
+             else
+                "+"
+            )
+                ++ String.fromFloat
+            <|
+                toFloat min
+                    / 60
+
+
+posixToStr : Time.Posix -> ( Time.Zone, Time.ZoneName ) -> String
+posixToStr t ( tz, zname ) =
+    String.join " "
+        [ String.join "/"
+            [ String.fromInt <| Time.toYear tz t
+            , String.fromInt <| monthNumber <| Time.toMonth tz t
+            , String.fromInt <| Time.toDay tz t
+            ]
+        , String.join ":"
+            [ String.fromInt <| Time.toHour tz t
+            , String.fromInt <| Time.toMinute tz t
+            , String.fromInt <| Time.toSecond tz t
+            ]
+        , zoneStr zname
+        ]
+
+
+timestampView : Timestamp -> ( Time.Zone, Time.ZoneName ) -> Element Msg
+timestampView t tz =
+    Elm.column []
+        [ Elm.text <| "開始時刻: " ++ posixToStr t.start tz
+        ]
+
+
+gameInfo : ( Time.Zone, Time.ZoneName ) -> Game -> Element Msg
+gameInfo tz game =
+    Elm.column []
+        [ timestampView game.timestamp tz
+        , playersView game.players
+        , Elm.text <| "手割合: " ++ game.handicap
+        , Elm.text <| "棋戦: " ++ game.gameName
+        ]
+
+
 boardView : Model -> String -> Int -> Element Msg
 boardView model kifuId seq =
     Elm.column [ Elm.spacing 10 ]
-        [ playersView model
+        [ Maybe.withDefault Elm.none <| Maybe.map (gameInfo model.timeZone) model.game
         , KB.viewElm model.board Msg.KifuMsg
         , stepView model.step seq
         , Elm.row [ Elm.width Elm.fill ] <|

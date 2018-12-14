@@ -266,6 +266,15 @@ capturedAttrs player =
         Elm.rotate pi :: Elm.alignTop :: attrs
 
 
+captured : List Piece -> List String
+captured ps =
+    if List.isEmpty ps then
+        [ "なし" ]
+
+    else
+        List.map (\p -> pieceText p.type_) ps
+
+
 board : Scene -> Element Msg
 board scene =
     let
@@ -287,7 +296,7 @@ board scene =
             Elm.text <|
                 String.join "" <|
                     "☖持駒: "
-                        :: List.map (\p -> pieceText p.type_) capturedSecond
+                        :: captured capturedSecond
         , Elm.column []
             [ Elm.row [] <|
                 List.map (headRow << Elm.text << String.fromInt) <|
@@ -304,7 +313,7 @@ board scene =
             Elm.text <|
                 String.join "" <|
                     "☗持駒: "
-                        :: List.map (\p -> pieceText p.type_) capturedFirst
+                        :: captured capturedFirst
         ]
 
 

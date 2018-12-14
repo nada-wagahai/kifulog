@@ -1,10 +1,12 @@
-module Main exposing (Flags, init, main, subscriptions)
+module Main exposing (Flags, main)
 
 import Browser
 import Browser.Navigation as Nav
 import Kifu.Board as KB
 import Model exposing (Model)
 import Route
+import Task
+import Time
 import Update exposing (Msg)
 import Url
 import View
@@ -28,14 +30,24 @@ type alias Flags =
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    Update.update (Update.UrlChanged url)
-        { count = 0
-        , key = key
-        , route = Route.toRoute url
-        , board = KB.init
-        , step = Model.initStep
-        , game = Nothing
-        }
+    let
+        ( m1, c1 ) =
+            Update.update (Update.UrlChanged url)
+                { count = 0
+                , key = key
+                , route = Route.toRoute url
+                , board = KB.init
+                , step = Model.initStep
+                , game = Nothing
+                , timeZone = ( Time.utc, Time.Name "UTC" )
+                }
+    in
+    ( m1
+    , Cmd.batch
+        [ Task.perform Update.SetZone <| Task.map2 Tuple.pair Time.here Time.getZoneName
+        , c1
+        ]
+    )
 
 
 

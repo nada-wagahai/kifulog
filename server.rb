@@ -141,6 +141,8 @@ class Server < Sinatra::Base
   end
 
   get '/api/kifu/:kifu_id/:seq' do
+    p cookies[:session_id] # XXX
+
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 

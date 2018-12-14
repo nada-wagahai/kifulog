@@ -5,8 +5,9 @@ import Browser.Navigation as Nav
 import Http
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Model, Step)
+import Model exposing (Game, Model, Step)
 import Route
+import Time
 import Url
 
 
@@ -21,6 +22,7 @@ type Msg
     | KifuMsg KB.Msg
     | ApiRequest KifuRequest
     | ApiResponse KifuRequest (Result Http.Error String)
+    | SetZone ( Time.Zone, Time.ZoneName )
     | NopMsg
 
 
@@ -32,6 +34,36 @@ fieldMaybe label =
 fieldDefault : String -> a -> D.Decoder a -> D.Decoder a
 fieldDefault label a =
     D.map (Maybe.withDefault a) << fieldMaybe label
+
+
+playerDecoder : String -> D.Decoder KB.Player
+playerDecoder label =
+    D.map KB.playerFromString <| fieldDefault label "FIRST" D.string
+
+
+gameDecoder : D.Decoder Game
+gameDecoder =
+    D.map4
+        (\p t h g ->
+            { players = p
+            , timestamp = t
+            , handicap = h
+            , gameName = g
+            , steps = []
+            }
+        )
+        (D.field "players" <|
+            D.list <|
+                D.map2 Model.Player
+                    (playerDecoder "order")
+                    (D.field "name" D.string)
+        )
+        (D.map2 Model.Timestamp
+            (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "startTs" D.int)
+            (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "endTs" D.int)
+        )
+        (D.field "handicap" D.string)
+        (D.field "gameName" D.string)
 
 
 posDecoder : String -> D.Decoder (Maybe KB.Pos)
@@ -50,8 +82,8 @@ posDecoder label =
         D.map2 f (D.field "x" D.int) (D.field "y" D.int)
 
 
-decoder : D.Decoder ( KB.Scene, Step )
-decoder =
+sceneDecoder : D.Decoder ( KB.Scene, Step )
+sceneDecoder =
     D.map2
         (\ps step ->
             ( { pieces = ps
@@ -66,7 +98,7 @@ decoder =
                 D.map3 KB.Piece
                     (D.map KB.pieceFromString <| D.field "type" D.string)
                     (posDecoder "pos")
-                    (D.map KB.playerFromString <| fieldDefault "order" "FIRST" D.string)
+                    (playerDecoder "order")
         )
         (fieldDefault "step" Model.initStep <|
             D.map4 Step
@@ -74,7 +106,7 @@ decoder =
                     (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
                     (posDecoder "pos")
                 )
-                (D.map KB.playerFromString <| fieldDefault "player" "FIRST" D.string)
+                (playerDecoder "player")
                 (posDecoder "prev")
                 (fieldDefault "finished" False D.bool)
         )
@@ -148,7 +180,7 @@ update msg model =
                 KifuScene _ _ ->
                     case result of
                         Ok text ->
-                            case D.decodeString decoder text of
+                            case D.decodeString sceneDecoder text of
                                 Ok ( scene, step ) ->
                                     update
                                         (KifuMsg <| KB.UpdateScene scene)
@@ -157,19 +189,40 @@ update msg model =
                                 Err err ->
                                     let
                                         a_ =
-                                            Debug.log "json" err
+                                            Debug.log "kifu json" err
                                     in
                                     ( model, Cmd.none )
 
                         Err err ->
                             let
                                 _ =
-                                    Debug.log "err" err
+                                    Debug.log "kifu err" err
                             in
                             ( model, Cmd.none )
 
                 KifuGame _ ->
-                    ( model, Cmd.none )
+                    case result of
+                        Ok text ->
+                            case D.decodeString gameDecoder text of
+                                Ok game ->
+                                    update NopMsg { model | game = Just game }
+
+                                Err err ->
+                                    let
+                                        a_ =
+                                            Debug.log "game json" err
+                                    in
+                                    ( model, Cmd.none )
+
+                        Err err ->
+                            let
+                                _ =
+                                    Debug.log "game err" err
+                            in
+                            ( model, Cmd.none )
+
+        SetZone zone ->
+            ( { model | timeZone = zone }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
