@@ -114,10 +114,7 @@ zoneStr zone =
              else
                 "+"
             )
-                ++ String.fromFloat
-            <|
-                toFloat min
-                    / 60
+                ++ String.fromFloat (toFloat min / 60)
 
 
 posixToStr : Time.Posix -> ( Time.Zone, Time.ZoneName ) -> String
