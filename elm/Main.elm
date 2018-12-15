@@ -35,6 +35,7 @@ init flags url key =
             Update.update (Update.UrlChanged url)
                 { count = 0
                 , key = key
+                , url = url
                 , route = Route.toRoute url
                 , board = KB.init
                 , step = Model.initStep

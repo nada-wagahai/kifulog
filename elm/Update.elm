@@ -43,15 +43,7 @@ playerDecoder label =
 
 gameDecoder : D.Decoder Game
 gameDecoder =
-    D.map4
-        (\p t h g ->
-            { players = p
-            , timestamp = t
-            , handicap = h
-            , gameName = g
-            , steps = []
-            }
-        )
+    D.map5 Game
         (D.field "players" <|
             D.list <|
                 D.map2 Model.Player
@@ -64,6 +56,7 @@ gameDecoder =
         )
         (D.field "handicap" D.string)
         (D.field "gameName" D.string)
+        (D.field "steps" <| D.list stepDecoder)
 
 
 posDecoder : String -> D.Decoder (Maybe KB.Pos)
@@ -80,6 +73,19 @@ posDecoder label =
         << fieldMaybe label
     <|
         D.map2 f (D.field "x" D.int) (D.field "y" D.int)
+
+
+stepDecoder : D.Decoder Step
+stepDecoder =
+    D.map5 Step
+        (D.field "seq" D.int)
+        (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
+            (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
+            (posDecoder "pos")
+        )
+        (playerDecoder "player")
+        (posDecoder "prev")
+        (fieldDefault "finished" False D.bool)
 
 
 sceneDecoder : D.Decoder ( KB.Scene, Step )
@@ -100,28 +106,19 @@ sceneDecoder =
                     (posDecoder "pos")
                     (playerDecoder "order")
         )
-        (fieldDefault "step" Model.initStep <|
-            D.map4 Step
-                (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
-                    (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
-                    (posDecoder "pos")
-                )
-                (playerDecoder "player")
-                (posDecoder "prev")
-                (fieldDefault "finished" False D.bool)
-        )
+        (fieldDefault "step" Model.initStep stepDecoder)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LinkClicked (Browser.Internal url) ->
-            ( model
-            , Nav.pushUrl model.key (Url.toString <| Debug.log "url" url)
+            ( { model | url = url }
+            , Nav.pushUrl model.key (Url.toString url)
             )
 
         LinkClicked (Browser.External href) ->
-            ( model, Nav.load <| Debug.log "href" href )
+            ( model, Nav.load href )
 
         UrlChanged url ->
             let
@@ -129,7 +126,7 @@ update msg model =
                     { model | route = Route.toRoute url }
             in
             case m.route of
-                Route.Scene kifuId seq ->
+                Route.Kifu kifuId seq ->
                     let
                         ( m1, c1 ) =
                             update (ApiRequest <| KifuGame kifuId) m
@@ -138,9 +135,6 @@ update msg model =
                             update (ApiRequest <| KifuScene kifuId seq) m1
                     in
                     ( m2, Cmd.batch [ c1, c2 ] )
-
-                Route.Kifu kifuId ->
-                    update (ApiRequest <| KifuScene kifuId 0) m
 
                 _ ->
                     ( m, Cmd.none )
@@ -154,10 +148,10 @@ update msg model =
 
         ApiRequest req ->
             case req of
-                KifuScene kifuId step ->
+                KifuScene kifuId seq ->
                     ( model
                     , Http.get
-                        { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt step
+                        { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
                         , expect = Http.expectString (ApiResponse req)
                         }
                     )

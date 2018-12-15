@@ -6,11 +6,13 @@ import Element.Events as Event
 import Element.Input as Input
 import Html as Tag exposing (Attribute, Html)
 import Html.Attributes as Attr
+import Html.Events as HtmlEvent
 import Kifu.Board as KB
 import Model exposing (Game, Model, Player, Step, Timestamp)
 import Route
 import Time
 import Update as Msg exposing (Msg)
+import Url
 
 
 header : Model -> Element Msg
@@ -33,32 +35,36 @@ playersView players =
         ]
 
 
-stepView : Step -> Int -> Element msg
-stepView step seq =
+symbol : Step -> String
+symbol step =
+    KB.playerToSymbol step.player
+        ++ Maybe.withDefault
+            (if step.finished then
+                "投了"
+
+             else
+                ""
+            )
+            (Maybe.map (\c -> KB.posToString c.pos ++ KB.pieceText c.piece) step.curr)
+
+
+stepView : Step -> Element msg
+stepView step =
     Elm.el [] <|
         Elm.text <|
-            if seq == 0 then
+            if step.seq == 0 then
                 "開始前"
 
             else
-                String.fromInt seq
+                String.fromInt step.seq
                     ++ "手 "
-                    ++ KB.playerToSymbol step.player
-                    ++ Maybe.withDefault
-                        (if step.finished then
-                            "投了"
-
-                         else
+                    ++ symbol step
+                    ++ (if step.finished then
                             ""
-                        )
-                        (Maybe.map
-                            (\c ->
-                                KB.posToString c.pos
-                                    ++ KB.pieceText c.piece
-                                    ++ " まで"
-                            )
-                            step.curr
-                        )
+
+                        else
+                            " まで"
+                       )
 
 
 monthNumber : Time.Month -> Int
@@ -151,12 +157,42 @@ gameInfo tz game =
         ]
 
 
+stepsView : Model -> Int -> Game -> Element Msg
+stepsView model seq game =
+    Elm.html <|
+        Tag.select [ Attr.size 15 ] <|
+            List.map
+                (\step ->
+                    let
+                        url =
+                            model.url
+
+                        url_ =
+                            { url
+                                | path =
+                                    url.path
+                                        ++ "/../"
+                                        ++ String.fromInt step.seq
+                            }
+                    in
+                    Tag.option
+                        [ Attr.selected (seq == step.seq)
+                        , HtmlEvent.onClick <| Msg.LinkClicked <| Browser.Internal url_
+                        ]
+                        [ Tag.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
+                )
+                game.steps
+
+
 boardView : Model -> String -> Int -> Element Msg
 boardView model kifuId seq =
     Elm.column [ Elm.spacing 10 ]
         [ Maybe.withDefault Elm.none <| Maybe.map (gameInfo model.timeZone) model.game
-        , KB.viewElm model.board Msg.KifuMsg
-        , stepView model.step seq
+        , Elm.row []
+            [ KB.viewElm model.board Msg.KifuMsg
+            , Maybe.withDefault Elm.none <| Maybe.map (stepsView model seq) model.game
+            ]
+        , stepView model.step
         , Elm.row [ Elm.width Elm.fill ] <|
             List.concat
                 [ if seq == 0 then
@@ -184,11 +220,8 @@ boardView model kifuId seq =
 content : Model -> Element Msg
 content model =
     case model.route of
-        Route.Scene kifuId seq ->
+        Route.Kifu kifuId seq ->
             boardView model kifuId seq
-
-        Route.Kifu kifuId ->
-            boardView model kifuId 0
 
         _ ->
             Elm.text "NotFound"
@@ -199,7 +232,7 @@ body model =
     Elm.layout [] <|
         Elm.column []
             [ header model
-            , Elm.el [] <| content model
+            , content model
             ]
 
 

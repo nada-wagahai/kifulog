@@ -6,8 +6,7 @@ import Url.Parser as Parser exposing ((</>), Parser)
 
 type Route
     = Index
-    | Kifu String
-    | Scene String Int
+    | Kifu String Int
     | NotFound
 
 
@@ -15,8 +14,8 @@ routeParser : Parser (Route -> a) a
 routeParser =
     Parser.oneOf
         [ Parser.map Index Parser.top
-        , Parser.map Kifu (Parser.s "kifu" </> Parser.string)
-        , Parser.map Scene (Parser.s "kifu" </> Parser.string </> Parser.int)
+        , Parser.map (\kifuId -> Kifu kifuId 0) (Parser.s "kifu" </> Parser.string)
+        , Parser.map Kifu (Parser.s "kifu" </> Parser.string </> Parser.int)
         ]
 
 

@@ -4,10 +4,12 @@ import Browser.Navigation as Nav
 import Kifu.Board as KB
 import Route exposing (Route)
 import Time
+import Url
 
 
 type alias Step =
-    { curr :
+    { seq : Int
+    , curr :
         Maybe
             { pos : KB.Pos
             , piece : KB.PieceType
@@ -20,7 +22,7 @@ type alias Step =
 
 initStep : Step
 initStep =
-    Step Nothing KB.FIRST Nothing False
+    Step 0 Nothing KB.FIRST Nothing False
 
 
 type alias Player =
@@ -47,6 +49,7 @@ type alias Game =
 type alias Model =
     { count : Int
     , key : Nav.Key
+    , url : Url.Url
     , route : Route
     , board : KB.Model
     , step : Step
