@@ -13,7 +13,7 @@ import Url
 
 type KifuRequest
     = KifuScene String Int
-    | KifuGame String
+    | KifuGame String Int
 
 
 type Msg
@@ -147,14 +147,12 @@ update msg model =
             in
             case m.route of
                 Route.Kifu kifuId seq ->
-                    let
-                        ( m1, c1 ) =
-                            update (ApiRequest <| KifuGame kifuId) m
+                    case m.game of
+                        Nothing ->
+                            update (ApiRequest <| KifuGame kifuId seq) m
 
-                        ( m2, c2 ) =
-                            update (ApiRequest <| KifuScene kifuId seq) m1
-                    in
-                    ( m2, Cmd.batch [ c1, c2 ] )
+                        Just _ ->
+                            update (ApiRequest <| KifuScene kifuId seq) m
 
                 Route.KifuTop kifuId ->
                     update (LinkClicked (Browser.Internal { url | path = url.path ++ "/0" })) model
@@ -179,7 +177,7 @@ update msg model =
                         }
                     )
 
-                KifuGame kifuId ->
+                KifuGame kifuId seq ->
                     case model.game of
                         Nothing ->
                             ( model
@@ -197,11 +195,24 @@ update msg model =
                 KifuScene _ seq ->
                     case result of
                         Ok text ->
-                            case D.decodeString sceneDecoder text of
-                                Ok ( scene, step ) ->
-                                    update
-                                        (KifuMsg <| KB.UpdateScene scene)
-                                        { model | step = step }
+                            case D.decodeString (piecesDecoder "pieces") text of
+                                Ok pieces ->
+                                    case model.game of
+                                        Nothing ->
+                                            ( model, Cmd.none )
+
+                                        Just game ->
+                                            let
+                                                step =
+                                                    if seq == 0 then
+                                                        Model.initStep
+
+                                                    else
+                                                        Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
+                                            in
+                                            update
+                                                (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
+                                                { model | step = step }
 
                                 Err err ->
                                     let
@@ -217,12 +228,12 @@ update msg model =
                             in
                             ( model, Cmd.none )
 
-                KifuGame _ ->
+                KifuGame kifuId seq ->
                     case result of
                         Ok text ->
                             case D.decodeString gameDecoder text of
                                 Ok game ->
-                                    update NopMsg { model | game = Just game }
+                                    update (ApiRequest (KifuScene kifuId seq)) { model | game = Just game }
 
                                 Err err ->
                                     let
