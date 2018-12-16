@@ -107,26 +107,9 @@ piecesDecoder label =
                 (playerDecoder "order")
 
 
-sceneDecoder : D.Decoder ( KB.Scene, Step )
-sceneDecoder =
-    D.map2
-        (\ps step ->
-            ( mkScene ps step
-            , step
-            )
-        )
-        (piecesDecoder "pieces")
-        (fieldDefault "step" Model.initStep stepDecoder)
-
-
 get : Int -> List a -> Maybe a
 get i =
     List.head << List.drop i
-
-
-maybe : b -> (a -> b) -> Maybe a -> b
-maybe d f =
-    Maybe.withDefault d << Maybe.map f
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

@@ -152,13 +152,9 @@ class Server < Sinatra::Base
     not_found if kifu.nil?
 
     seq = params['seq'].to_i
-    step = seq != 0 ? kifu.steps[seq-1] : nil
     board_id = kifu.board_ids[seq]
 
     board = @@db.get_board(board_id)
-    not_found if board.nil?
-
-    board.step = step
 
     board.to_json
   end
