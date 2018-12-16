@@ -17,12 +17,13 @@ type alias Step =
     , player : KB.Player
     , prev : Maybe KB.Pos
     , finished : Bool
+    , notes : List String
     }
 
 
 initStep : Step
 initStep =
-    Step 0 Nothing KB.FIRST Nothing False
+    Step 0 Nothing KB.FIRST Nothing False []
 
 
 type alias Player =

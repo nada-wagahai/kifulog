@@ -4,7 +4,7 @@ import Browser
 import Element as Elm exposing (Attribute, Element)
 import Element.Events as Event
 import Element.Input as Input
-import Html as Tag exposing (Attribute, Html)
+import Html exposing (Attribute, Html)
 import Html.Attributes as Attr
 import Html.Events as HtmlEvent
 import Kifu.Board as KB
@@ -160,7 +160,7 @@ gameInfo tz game =
 stepsView : Model -> Int -> Game -> Element Msg
 stepsView model seq game =
     Elm.html <|
-        Tag.select [ Attr.size 15 ] <|
+        Html.select [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "96px" ] <|
             List.map
                 (\step ->
                     let
@@ -175,13 +175,44 @@ stepsView model seq game =
                                         ++ String.fromInt step.seq
                             }
                     in
-                    Tag.option
+                    Html.option
                         [ Attr.selected (seq == step.seq)
+                        , Attr.style "font-size" "larger"
                         , HtmlEvent.onClick <| Msg.LinkClicked <| Browser.Internal url_
                         ]
-                        [ Tag.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
+                        [ Html.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
                 )
                 game.steps
+
+
+controlView : Model -> Int -> Element Msg
+controlView model seq =
+    Elm.row [ Elm.width Elm.fill ] <|
+        List.concat
+            [ if seq == 0 then
+                []
+
+              else
+                [ Elm.link []
+                    { url = String.fromInt (seq - 1)
+                    , label = Elm.text "前"
+                    }
+                ]
+            , if model.step.finished then
+                []
+
+              else
+                [ Elm.link [ Elm.alignRight ]
+                    { url = String.fromInt (seq + 1)
+                    , label = Elm.text "次"
+                    }
+                ]
+            ]
+
+
+linkView : Model -> Element Msg
+linkView model =
+    Elm.text ""
 
 
 boardView : Model -> String -> Int -> Element Msg
@@ -193,27 +224,19 @@ boardView model kifuId seq =
             , Maybe.withDefault Elm.none <| Maybe.map (stepsView model seq) model.game
             ]
         , stepView model.step
-        , Elm.row [ Elm.width Elm.fill ] <|
-            List.concat
-                [ if seq == 0 then
-                    []
-
-                  else
-                    [ Elm.link []
-                        { url = String.fromInt (seq - 1)
-                        , label = Elm.text "前"
-                        }
-                    ]
-                , if model.step.finished then
-                    []
-
-                  else
-                    [ Elm.link [ Elm.alignRight ]
-                        { url = String.fromInt (seq + 1)
-                        , label = Elm.text "次"
-                        }
-                    ]
-                ]
+        , Input.multiline
+            [ Elm.htmlAttribute (Attr.readonly True)
+            , Elm.htmlAttribute (Attr.style "font-size" "small")
+            , Elm.height (Elm.px 100)
+            ]
+            { onChange = always Msg.NopMsg
+            , text = String.join "\n" model.step.notes
+            , placeholder = Nothing
+            , label = Input.labelHidden "notes"
+            , spellcheck = False
+            }
+        , controlView model seq
+        , linkView model
         ]
 
 
@@ -245,4 +268,4 @@ view model =
 
 viewLink : List (Attribute Msg) -> String -> Html Msg
 viewLink attrs path =
-    Tag.li [] [ Tag.a (Attr.href path :: attrs) [ Tag.text path ] ]
+    Html.li [] [ Html.a (Attr.href path :: attrs) [ Html.text path ] ]

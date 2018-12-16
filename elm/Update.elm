@@ -77,7 +77,7 @@ posDecoder label =
 
 stepDecoder : D.Decoder Step
 stepDecoder =
-    D.map5 Step
+    D.map6 Step
         (D.field "seq" D.int)
         (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
             (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
@@ -86,6 +86,7 @@ stepDecoder =
         (playerDecoder "player")
         (posDecoder "prev")
         (fieldDefault "finished" False D.bool)
+        (D.field "notes" <| D.list D.string)
 
 
 sceneDecoder : D.Decoder ( KB.Scene, Step )
