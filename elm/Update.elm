@@ -136,6 +136,9 @@ update msg model =
                     in
                     ( m2, Cmd.batch [ c1, c2 ] )
 
+                Route.KifuTop kifuId ->
+                    update (LinkClicked (Browser.Internal { url | path = url.path ++ "/0" })) model
+
                 _ ->
                     ( m, Cmd.none )
 
