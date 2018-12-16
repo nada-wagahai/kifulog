@@ -119,6 +119,16 @@ sceneDecoder =
         (fieldDefault "step" Model.initStep stepDecoder)
 
 
+get : Int -> List a -> Maybe a
+get i =
+    List.head << List.drop i
+
+
+maybe : b -> (a -> b) -> Maybe a -> b
+maybe d f =
+    Maybe.withDefault d << Maybe.map f
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
