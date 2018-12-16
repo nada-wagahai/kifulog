@@ -89,24 +89,33 @@ stepDecoder =
         (D.field "notes" <| D.list D.string)
 
 
+mkScene : List KB.Piece -> Step -> KB.Scene
+mkScene pieces step =
+    { pieces = pieces
+    , pos = Maybe.map (\c -> c.pos) step.curr
+    , prev = step.prev
+    }
+
+
+piecesDecoder : String -> D.Decoder (List KB.Piece)
+piecesDecoder label =
+    D.field label <|
+        D.list <|
+            D.map3 KB.Piece
+                (D.map KB.pieceFromString <| D.field "type" D.string)
+                (posDecoder "pos")
+                (playerDecoder "order")
+
+
 sceneDecoder : D.Decoder ( KB.Scene, Step )
 sceneDecoder =
     D.map2
         (\ps step ->
-            ( { pieces = ps
-              , pos = Maybe.map (\c -> c.pos) step.curr
-              , prev = step.prev
-              }
+            ( mkScene ps step
             , step
             )
         )
-        (D.field "pieces" <|
-            D.list <|
-                D.map3 KB.Piece
-                    (D.map KB.pieceFromString <| D.field "type" D.string)
-                    (posDecoder "pos")
-                    (playerDecoder "order")
-        )
+        (piecesDecoder "pieces")
         (fieldDefault "step" Model.initStep stepDecoder)
 
 
@@ -175,7 +184,7 @@ update msg model =
 
         ApiResponse res result ->
             case res of
-                KifuScene _ _ ->
+                KifuScene _ seq ->
                     case result of
                         Ok text ->
                             case D.decodeString sceneDecoder text of
