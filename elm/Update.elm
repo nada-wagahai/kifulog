@@ -40,6 +40,92 @@ get i =
     List.head << List.drop i
 
 
+apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
+apiRequest model req =
+    case req of
+        KifuScene kifuId seq ->
+            ( model
+            , Http.get
+                { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
+
+        KifuGame kifuId seq ->
+            case model.game of
+                Nothing ->
+                    ( model
+                    , Http.get
+                        { url = "/api/kifu/" ++ kifuId
+                        , expect = Http.expectString (ApiResponse req)
+                        }
+                    )
+
+                Just _ ->
+                    ( model, Cmd.none )
+
+
+apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
+apiResponse model res result =
+    case res of
+        KifuScene _ seq ->
+            case result of
+                Ok text ->
+                    case D.decodeString (Decoder.pieces "pieces") text of
+                        Ok pieces ->
+                            case model.game of
+                                Nothing ->
+                                    ( model, Cmd.none )
+
+                                Just game ->
+                                    let
+                                        step =
+                                            if seq == 0 then
+                                                Model.initStep
+
+                                            else
+                                                Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
+                                    in
+                                    update
+                                        (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
+                                        { model | step = step }
+
+                        Err err ->
+                            let
+                                a_ =
+                                    Debug.log "kifu json" err
+                            in
+                            ( model, Cmd.none )
+
+                Err err ->
+                    let
+                        _ =
+                            Debug.log "kifu err" err
+                    in
+                    ( model, Cmd.none )
+
+        KifuGame kifuId seq ->
+            case result of
+                Ok text ->
+                    case D.decodeString Decoder.game text of
+                        Ok game ->
+                            update (ApiRequest (KifuScene kifuId seq)) { model | game = Just game }
+
+                        Err err ->
+                            let
+                                a_ =
+                                    Debug.log "game json" err
+                            in
+                            ( model, Cmd.none )
+
+                Err err ->
+                    let
+                        _ =
+                            Debug.log "game err" err
+                    in
+                    ( model, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -79,86 +165,10 @@ update msg model =
             ( { model | board = kModel }, Cmd.none )
 
         ApiRequest req ->
-            case req of
-                KifuScene kifuId seq ->
-                    ( model
-                    , Http.get
-                        { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
-                        , expect = Http.expectString (ApiResponse req)
-                        }
-                    )
-
-                KifuGame kifuId seq ->
-                    case model.game of
-                        Nothing ->
-                            ( model
-                            , Http.get
-                                { url = "/api/kifu/" ++ kifuId
-                                , expect = Http.expectString (ApiResponse req)
-                                }
-                            )
-
-                        Just _ ->
-                            ( model, Cmd.none )
+            apiRequest model req
 
         ApiResponse res result ->
-            case res of
-                KifuScene _ seq ->
-                    case result of
-                        Ok text ->
-                            case D.decodeString (Decoder.pieces "pieces") text of
-                                Ok pieces ->
-                                    case model.game of
-                                        Nothing ->
-                                            ( model, Cmd.none )
-
-                                        Just game ->
-                                            let
-                                                step =
-                                                    if seq == 0 then
-                                                        Model.initStep
-
-                                                    else
-                                                        Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
-                                            in
-                                            update
-                                                (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
-                                                { model | step = step }
-
-                                Err err ->
-                                    let
-                                        a_ =
-                                            Debug.log "kifu json" err
-                                    in
-                                    ( model, Cmd.none )
-
-                        Err err ->
-                            let
-                                _ =
-                                    Debug.log "kifu err" err
-                            in
-                            ( model, Cmd.none )
-
-                KifuGame kifuId seq ->
-                    case result of
-                        Ok text ->
-                            case D.decodeString Decoder.game text of
-                                Ok game ->
-                                    update (ApiRequest (KifuScene kifuId seq)) { model | game = Just game }
-
-                                Err err ->
-                                    let
-                                        a_ =
-                                            Debug.log "game json" err
-                                    in
-                                    ( model, Cmd.none )
-
-                        Err err ->
-                            let
-                                _ =
-                                    Debug.log "game err" err
-                            in
-                            ( model, Cmd.none )
+            apiResponse model res result
 
         SetZone zone ->
             ( { model | timeZone = zone }, Cmd.none )
