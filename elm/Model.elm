@@ -1,6 +1,7 @@
 module Model exposing (Game, Kifu, Model, Player, Step, Timestamp, initGame, initStep)
 
 import Browser.Navigation as Nav
+import Dict exposing (Dict)
 import Kifu.Board as KB
 import Route exposing (Route)
 import Time
@@ -61,6 +62,7 @@ initKifu =
 type alias Game =
     { kifu : Kifu
     , kModel : KB.Model
+    , boardCache : Dict Int KB.Model
     , step : Step
     }
 
@@ -69,6 +71,7 @@ initGame : Game
 initGame =
     { kifu = initKifu
     , kModel = KB.init
+    , boardCache = Dict.empty
     , step = initStep
     }
 

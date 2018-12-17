@@ -2,6 +2,7 @@ module Update exposing (Msg(..), update)
 
 import Browser
 import Browser.Navigation as Nav
+import Dict
 import Http
 import Json.Decode as D
 import Kifu.Board as KB
@@ -40,16 +41,39 @@ get i =
     List.head << List.drop i
 
 
+updateScene : Model -> (Step -> KB.Scene) -> Int -> ( Model, Cmd Msg )
+updateScene model sceneF seq =
+    let
+        game =
+            model.game
+
+        step =
+            if seq == 0 then
+                Model.initStep
+
+            else
+                Maybe.withDefault Model.initStep (get (seq - 1) game.kifu.steps)
+    in
+    update
+        (KifuMsg <| KB.UpdateScene <| sceneF step)
+        { model | game = { game | step = step } }
+
+
 apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
 apiRequest model req =
     case req of
         KifuScene kifuId seq ->
-            ( model
-            , Http.get
-                { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
-                , expect = Http.expectString (ApiResponse req)
-                }
-            )
+            case Dict.get seq model.game.boardCache of
+                Nothing ->
+                    ( model
+                    , Http.get
+                        { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
+                        , expect = Http.expectString (ApiResponse req)
+                        }
+                    )
+
+                Just b ->
+                    updateScene model (always b.scene) seq
 
         KifuGame kifuId seq ->
             if model.game.kifu.kifuId == kifuId then
@@ -72,20 +96,7 @@ apiResponse model res result =
                 Ok text ->
                     case D.decodeString (Decoder.pieces "pieces") text of
                         Ok pieces ->
-                            let
-                                game =
-                                    model.game
-
-                                step =
-                                    if seq == 0 then
-                                        Model.initStep
-
-                                    else
-                                        Maybe.withDefault Model.initStep (get (seq - 1) game.kifu.steps)
-                            in
-                            update
-                                (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
-                                { model | game = { game | step = step } }
+                            updateScene model (mkScene pieces) seq
 
                         Err err ->
                             let
@@ -111,7 +122,7 @@ apiResponse model res result =
                                     model.game
                             in
                             update (ApiRequest (KifuScene kifuId seq)) <|
-                                { model | game = { game | kifu = kifu } }
+                                { model | game = { game | kifu = kifu, boardCache = Dict.empty } }
 
                         Err err ->
                             let
@@ -147,10 +158,10 @@ update msg model =
             case m.route of
                 Route.Kifu kifuId seq ->
                     if m.game.kifu.kifuId == kifuId then
-                        update (ApiRequest <| KifuGame kifuId seq) m
+                        update (ApiRequest <| KifuScene kifuId seq) m
 
                     else
-                        update (ApiRequest <| KifuScene kifuId seq) m
+                        update (ApiRequest <| KifuGame kifuId seq) m
 
                 Route.KifuTop kifuId ->
                     update (LinkClicked (Browser.Internal { url | path = url.path ++ "/0" })) model
@@ -166,7 +177,15 @@ update msg model =
                 ( kModel_, kMsg ) =
                     KB.update kifuMsg game.kModel
             in
-            ( { model | game = { game | kModel = kModel_ } }, Cmd.map KifuMsg kMsg )
+            ( { model
+                | game =
+                    { game
+                        | kModel = kModel_
+                        , boardCache = Dict.insert game.step.seq kModel_ game.boardCache
+                    }
+              }
+            , Cmd.map KifuMsg kMsg
+            )
 
         ApiRequest req ->
             apiRequest model req
