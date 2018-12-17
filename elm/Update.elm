@@ -5,9 +5,10 @@ import Browser.Navigation as Nav
 import Http
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Game, Model, Step)
+import Model exposing (Model, Step)
 import Route
 import Time
+import Update.Decoder as Decoder
 import Url
 
 
@@ -26,85 +27,12 @@ type Msg
     | NopMsg
 
 
-fieldMaybe : String -> D.Decoder a -> D.Decoder (Maybe a)
-fieldMaybe label =
-    D.maybe << D.field label
-
-
-fieldDefault : String -> a -> D.Decoder a -> D.Decoder a
-fieldDefault label a =
-    D.map (Maybe.withDefault a) << fieldMaybe label
-
-
-playerDecoder : String -> D.Decoder KB.Player
-playerDecoder label =
-    D.map KB.playerFromString <| fieldDefault label "FIRST" D.string
-
-
-gameDecoder : D.Decoder Game
-gameDecoder =
-    D.map5 Game
-        (D.field "players" <|
-            D.list <|
-                D.map2 Model.Player
-                    (playerDecoder "order")
-                    (D.field "name" D.string)
-        )
-        (D.map2 Model.Timestamp
-            (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "startTs" D.int)
-            (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "endTs" D.int)
-        )
-        (D.field "handicap" D.string)
-        (D.field "gameName" D.string)
-        (D.field "steps" <| D.list stepDecoder)
-
-
-posDecoder : String -> D.Decoder (Maybe KB.Pos)
-posDecoder label =
-    let
-        f x y =
-            if x == 0 || y == 0 then
-                Nothing
-
-            else
-                Just { x = x, y = y }
-    in
-    D.map (Maybe.andThen identity)
-        << fieldMaybe label
-    <|
-        D.map2 f (D.field "x" D.int) (D.field "y" D.int)
-
-
-stepDecoder : D.Decoder Step
-stepDecoder =
-    D.map6 Step
-        (D.field "seq" D.int)
-        (D.map2 (\pi -> Maybe.map (\pos -> { pos = pos, piece = pi }))
-            (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
-            (posDecoder "pos")
-        )
-        (playerDecoder "player")
-        (posDecoder "prev")
-        (fieldDefault "finished" False D.bool)
-        (D.field "notes" <| D.list D.string)
-
-
 mkScene : List KB.Piece -> Step -> KB.Scene
 mkScene pieces step =
     { pieces = pieces
     , pos = Maybe.map (\c -> c.pos) step.curr
     , prev = step.prev
     }
-
-
-piecesDecoder : String -> D.Decoder (List KB.Piece)
-piecesDecoder label =
-    D.field label <|
-        D.list <|
-            D.map3 KB.Piece
-                (D.map KB.pieceFromString <| D.field "type" D.string)
-                (posDecoder "pos")
-                (playerDecoder "order")
 
 
 get : Int -> List a -> Maybe a
@@ -178,7 +106,7 @@ update msg model =
                 KifuScene _ seq ->
                     case result of
                         Ok text ->
-                            case D.decodeString (piecesDecoder "pieces") text of
+                            case D.decodeString (Decoder.pieces "pieces") text of
                                 Ok pieces ->
                                     case model.game of
                                         Nothing ->
@@ -214,7 +142,7 @@ update msg model =
                 KifuGame kifuId seq ->
                     case result of
                         Ok text ->
-                            case D.decodeString gameDecoder text of
+                            case D.decodeString Decoder.game text of
                                 Ok game ->
                                     update (ApiRequest (KifuScene kifuId seq)) { model | game = Just game }
 
