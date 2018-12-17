@@ -52,17 +52,16 @@ apiRequest model req =
             )
 
         KifuGame kifuId seq ->
-            case model.game of
-                Nothing ->
-                    ( model
-                    , Http.get
-                        { url = "/api/kifu/" ++ kifuId
-                        , expect = Http.expectString (ApiResponse req)
-                        }
-                    )
+            if model.game.kifu.kifuId == kifuId then
+                ( model, Cmd.none )
 
-                Just _ ->
-                    ( model, Cmd.none )
+            else
+                ( model
+                , Http.get
+                    { url = "/api/kifu/" ++ kifuId
+                    , expect = Http.expectString (ApiResponse req)
+                    }
+                )
 
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
@@ -73,22 +72,20 @@ apiResponse model res result =
                 Ok text ->
                     case D.decodeString (Decoder.pieces "pieces") text of
                         Ok pieces ->
-                            Maybe.withDefault ( model, Cmd.none ) <|
-                                Maybe.map
-                                    (\( game, kifuModel, _ ) ->
-                                        let
-                                            step =
-                                                if seq == 0 then
-                                                    Model.initStep
-
-                                                else
-                                                    Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
-                                        in
-                                        update
-                                            (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
-                                            { model | game = Just ( game, kifuModel, step ) }
-                                    )
+                            let
+                                game =
                                     model.game
+
+                                step =
+                                    if seq == 0 then
+                                        Model.initStep
+
+                                    else
+                                        Maybe.withDefault Model.initStep (get (seq - 1) game.kifu.steps)
+                            in
+                            update
+                                (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
+                                { model | game = { game | step = step } }
 
                         Err err ->
                             let
@@ -107,18 +104,14 @@ apiResponse model res result =
         KifuGame kifuId seq ->
             case result of
                 Ok text ->
-                    case D.decodeString Decoder.kifu text of
+                    case D.decodeString (Decoder.kifu kifuId) text of
                         Ok kifu ->
                             let
-                                model_ =
-                                    Maybe.withDefault model <|
-                                        Maybe.map
-                                            (\( _, kModel, step ) ->
-                                                { model | game = Just ( kifu, kModel, step ) }
-                                            )
-                                            model.game
+                                game =
+                                    model.game
                             in
-                            update (ApiRequest (KifuScene kifuId seq)) model_
+                            update (ApiRequest (KifuScene kifuId seq)) <|
+                                { model | game = { game | kifu = kifu } }
 
                         Err err ->
                             let
@@ -153,12 +146,11 @@ update msg model =
             in
             case m.route of
                 Route.Kifu kifuId seq ->
-                    case m.game of
-                        Nothing ->
-                            update (ApiRequest <| KifuGame kifuId seq) m
+                    if m.game.kifu.kifuId == kifuId then
+                        update (ApiRequest <| KifuGame kifuId seq) m
 
-                        Just _ ->
-                            update (ApiRequest <| KifuScene kifuId seq) m
+                    else
+                        update (ApiRequest <| KifuScene kifuId seq) m
 
                 Route.KifuTop kifuId ->
                     update (LinkClicked (Browser.Internal { url | path = url.path ++ "/0" })) model
@@ -167,16 +159,14 @@ update msg model =
                     ( m, Cmd.none )
 
         KifuMsg kifuMsg ->
-            Maybe.withDefault ( model, Cmd.none ) <|
-                Maybe.map
-                    (\( game, kModel, step ) ->
-                        let
-                            ( kModel_, kMsg ) =
-                                KB.update kifuMsg kModel
-                        in
-                        ( { model | game = Just ( game, kModel_, step ) }, Cmd.map KifuMsg kMsg )
-                    )
+            let
+                game =
                     model.game
+
+                ( kModel_, kMsg ) =
+                    KB.update kifuMsg game.kModel
+            in
+            ( { model | game = { game | kModel = kModel_ } }, Cmd.map KifuMsg kMsg )
 
         ApiRequest req ->
             apiRequest model req

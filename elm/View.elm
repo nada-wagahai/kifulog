@@ -185,25 +185,25 @@ stepsView model seq game =
                 game.steps
 
 
-controlView : Model -> Step -> Int -> Element Msg
-controlView model step seq =
+controlView : Model -> Element Msg
+controlView model =
     Elm.row [ Elm.width Elm.fill ] <|
         List.concat
-            [ if seq == 0 then
+            [ if model.game.step.seq == 0 then
                 []
 
               else
                 [ Elm.link []
-                    { url = String.fromInt (seq - 1)
+                    { url = String.fromInt (model.game.step.seq - 1)
                     , label = Elm.text "前"
                     }
                 ]
-            , if step.finished then
+            , if model.game.step.finished then
                 []
 
               else
                 [ Elm.link [ Elm.alignRight ]
-                    { url = String.fromInt (seq + 1)
+                    { url = String.fromInt (model.game.step.seq + 1)
                     , label = Elm.text "次"
                     }
                 ]
@@ -215,31 +215,27 @@ linkView model =
     Elm.text ""
 
 
-boardView : Model -> String -> Int -> Element Msg
-boardView model kifuId seq =
-    let
-        ( game, kModel, step ) =
-            Maybe.withDefault ( Model.initKifu, KB.init, Model.initStep ) model.game
-    in
+boardView : Model -> Element Msg
+boardView model =
     Elm.column [ Elm.spacing 10 ]
-        [ gameInfo model.timeZone game
+        [ gameInfo model.timeZone model.game.kifu
         , Elm.row []
-            [ KB.viewElm kModel Msg.KifuMsg
-            , stepsView model seq game
+            [ KB.viewElm model.game.kModel Msg.KifuMsg
+            , stepsView model model.game.step.seq model.game.kifu
             ]
-        , stepView step
+        , stepView model.game.step
         , Input.multiline
             [ Elm.htmlAttribute (Attr.readonly True)
             , Elm.htmlAttribute (Attr.style "font-size" "small")
             , Elm.height (Elm.px 100)
             ]
             { onChange = always Msg.NopMsg
-            , text = String.join "\n" step.notes
+            , text = String.join "\n" model.game.step.notes
             , placeholder = Nothing
             , label = Input.labelHidden "notes"
             , spellcheck = False
             }
-        , controlView model step seq
+        , controlView model
         , linkView model
         ]
 
@@ -248,7 +244,7 @@ content : Model -> Element Msg
 content model =
     case model.route of
         Route.Kifu kifuId seq ->
-            boardView model kifuId seq
+            boardView model
 
         _ ->
             Elm.text "NotFound"

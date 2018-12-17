@@ -37,7 +37,7 @@ init flags url key =
                 , key = key
                 , url = url
                 , route = Route.toRoute url
-                , game = Nothing
+                , game = Model.initGame
                 , timeZone = ( Time.utc, Time.Name "UTC" )
                 }
     in

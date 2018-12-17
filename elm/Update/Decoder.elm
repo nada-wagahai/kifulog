@@ -24,9 +24,9 @@ player label =
     D.map KB.playerFromString <| fieldDefault label "FIRST" D.string
 
 
-kifu : D.Decoder Kifu
-kifu =
-    D.map5 Kifu
+kifu : String -> D.Decoder Kifu
+kifu kifuId =
+    D.map5 (Kifu kifuId)
         (D.field "players" <|
             D.list <|
                 D.map2 Model.Player
