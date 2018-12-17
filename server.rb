@@ -145,18 +145,15 @@ class Server < Sinatra::Base
     kifu.to_json
   end
 
-  get '/api/kifu/:kifu_id/:seq' do
-    authorize!
-
-    kifu = @@db.get_kifu(params['kifu_id'])
-    not_found if kifu.nil?
-
-    seq = params['seq'].to_i
-    board_id = kifu.board_ids[seq]
-
-    board = @@db.get_board(board_id)
-
+  get '/api/board/:board_id' do
+    board = @@db.get_board(params['board_id'])
     board.to_json
+  end
+
+  get '/api/comments/:board_id' do
+    comment_ids = @@index.search_comment(board_id: params['board_id'])
+    comments = @@db.batch_get_comments(comment_ids)
+    Comment::CommentList.new(comments: comments).to_json
   end
 
   get '/kifu/:kifu_id' do

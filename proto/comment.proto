@@ -12,3 +12,7 @@ message Comment {
   string kifu_id = 7;
   int32 seq = 8;
 }
+
+message CommentList {
+  repeated Comment comments = 1;
+}

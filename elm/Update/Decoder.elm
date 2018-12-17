@@ -1,11 +1,12 @@
 module Update.Decoder exposing
-    ( kifu
+    ( comments
+    , kifu
     , pieces
     )
 
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Kifu, Step)
+import Model exposing (Comment, Kifu, Step)
 import Time
 
 
@@ -26,7 +27,7 @@ player label =
 
 kifu : String -> D.Decoder Kifu
 kifu kifuId =
-    D.map5 (Kifu kifuId)
+    D.map6 (Kifu kifuId)
         (D.field "players" <|
             D.list <|
                 D.map2 Model.Player
@@ -40,6 +41,7 @@ kifu kifuId =
         (D.field "handicap" D.string)
         (D.field "gameName" D.string)
         (D.field "steps" <| D.list step)
+        (D.field "boardIds" <| D.list D.string)
 
 
 pos : String -> D.Decoder (Maybe KB.Pos)
@@ -80,3 +82,12 @@ pieces label =
                 (D.map KB.pieceFromString <| D.field "type" D.string)
                 (pos "pos")
                 (player "order")
+
+
+comments : D.Decoder (List Comment)
+comments =
+    D.list <|
+        D.map3 Comment
+            (D.field "id" D.string)
+            (D.field "ownerId" D.string)
+            (D.field "text" D.string)

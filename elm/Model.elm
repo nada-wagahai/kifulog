@@ -1,4 +1,4 @@
-module Model exposing (Game, Kifu, Model, Player, Step, Timestamp, initGame, initStep)
+module Model exposing (Comment, Game, Kifu, Model, Player, Step, Timestamp, initGame, initStep)
 
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
@@ -51,19 +51,28 @@ type alias Kifu =
     , handicap : String
     , gameName : String
     , steps : List Step
+    , boardIds : List String
     }
 
 
 initKifu : Kifu
 initKifu =
-    Kifu "" [] initTimestamp "" "" []
+    Kifu "" [] initTimestamp "" "" [] []
+
+
+type alias Comment =
+    { id : String
+    , ownerId : String
+    , text : String
+    }
 
 
 type alias Game =
     { kifu : Kifu
     , kModel : KB.Model
-    , boardCache : Dict Int KB.Model
     , step : Step
+    , comments : List Comment
+    , boardCache : Dict Int KB.Model
     }
 
 
@@ -71,8 +80,9 @@ initGame : Game
 initGame =
     { kifu = initKifu
     , kModel = KB.init
-    , boardCache = Dict.empty
     , step = initStep
+    , comments = []
+    , boardCache = Dict.empty
     }
 
 

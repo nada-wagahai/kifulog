@@ -16,6 +16,7 @@ import Url
 type KifuRequest
     = KifuScene String Int
     | KifuGame String Int
+    | KifuComment String
 
 
 type Msg
@@ -62,12 +63,12 @@ updateScene model sceneF seq =
 apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
 apiRequest model req =
     case req of
-        KifuScene kifuId seq ->
+        KifuScene boardId seq ->
             case Dict.get seq model.game.boardCache of
                 Nothing ->
                     ( model
                     , Http.get
-                        { url = "/api/kifu/" ++ kifuId ++ "/" ++ String.fromInt seq
+                        { url = "/api/board/" ++ boardId
                         , expect = Http.expectString (ApiResponse req)
                         }
                     )
@@ -87,13 +88,21 @@ apiRequest model req =
                     }
                 )
 
+        KifuComment boardId ->
+            ( model
+            , Http.get
+                { url = "/api/comments/" ++ boardId
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
+
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
 apiResponse model res result =
-    case res of
-        KifuScene _ seq ->
-            case result of
-                Ok text ->
+    case result of
+        Ok text ->
+            case res of
+                KifuScene _ seq ->
                     case D.decodeString (Decoder.pieces "pieces") text of
                         Ok pieces ->
                             updateScene model (mkScene pieces) seq
@@ -105,24 +114,26 @@ apiResponse model res result =
                             in
                             ( model, Cmd.none )
 
-                Err err ->
-                    let
-                        _ =
-                            Debug.log "kifu err" err
-                    in
-                    ( model, Cmd.none )
-
-        KifuGame kifuId seq ->
-            case result of
-                Ok text ->
+                KifuGame kifuId seq ->
                     case D.decodeString (Decoder.kifu kifuId) text of
                         Ok kifu ->
-                            let
-                                game =
-                                    model.game
-                            in
-                            update (ApiRequest (KifuScene kifuId seq)) <|
-                                { model | game = { game | kifu = kifu, boardCache = Dict.empty } }
+                            case get seq kifu.boardIds of
+                                Nothing ->
+                                    ( model, Cmd.none )
+
+                                Just boardId ->
+                                    let
+                                        game =
+                                            model.game
+                                    in
+                                    update (ApiRequest (KifuScene boardId seq))
+                                        { model
+                                            | game =
+                                                { game
+                                                    | kifu = kifu
+                                                    , boardCache = Dict.empty
+                                                }
+                                        }
 
                         Err err ->
                             let
@@ -131,12 +142,32 @@ apiResponse model res result =
                             in
                             ( model, Cmd.none )
 
-                Err err ->
-                    let
-                        _ =
-                            Debug.log "game err" err
-                    in
-                    ( model, Cmd.none )
+                KifuComment boardId ->
+                    case D.decodeString (D.field "comments" Decoder.comments) text of
+                        Ok comments ->
+                            let
+                                game =
+                                    model.game
+                            in
+                            ( { model
+                                | game = { game | comments = comments }
+                              }
+                            , Cmd.none
+                            )
+
+                        Err err ->
+                            let
+                                a_ =
+                                    Debug.log "comment json" err
+                            in
+                            ( model, Cmd.none )
+
+        Err err ->
+            let
+                _ =
+                    Debug.log "http err" err
+            in
+            ( model, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -157,8 +188,12 @@ update msg model =
             in
             case m.route of
                 Route.Kifu kifuId seq ->
+                    let
+                        boardId =
+                            Maybe.withDefault "" <| get seq model.game.kifu.boardIds
+                    in
                     if m.game.kifu.kifuId == kifuId then
-                        update (ApiRequest <| KifuScene kifuId seq) m
+                        update (ApiRequest <| KifuScene boardId seq) m
 
                     else
                         update (ApiRequest <| KifuGame kifuId seq) m
