@@ -73,22 +73,22 @@ apiResponse model res result =
                 Ok text ->
                     case D.decodeString (Decoder.pieces "pieces") text of
                         Ok pieces ->
-                            case model.game of
-                                Nothing ->
-                                    ( model, Cmd.none )
+                            Maybe.withDefault ( model, Cmd.none ) <|
+                                Maybe.map
+                                    (\( game, kifuModel, _ ) ->
+                                        let
+                                            step =
+                                                if seq == 0 then
+                                                    Model.initStep
 
-                                Just game ->
-                                    let
-                                        step =
-                                            if seq == 0 then
-                                                Model.initStep
-
-                                            else
-                                                Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
-                                    in
-                                    update
-                                        (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
-                                        { model | step = step }
+                                                else
+                                                    Maybe.withDefault Model.initStep (get (seq - 1) game.steps)
+                                        in
+                                        update
+                                            (KifuMsg <| KB.UpdateScene <| mkScene pieces step)
+                                            { model | game = Just ( game, kifuModel, step ) }
+                                    )
+                                    model.game
 
                         Err err ->
                             let
@@ -109,7 +109,16 @@ apiResponse model res result =
                 Ok text ->
                     case D.decodeString Decoder.game text of
                         Ok game ->
-                            update (ApiRequest (KifuScene kifuId seq)) { model | game = Just game }
+                            let
+                                model_ =
+                                    Maybe.withDefault model <|
+                                        Maybe.map
+                                            (\( _, kModel, step ) ->
+                                                { model | game = Just ( game, kModel, step ) }
+                                            )
+                                            model.game
+                            in
+                            update (ApiRequest (KifuScene kifuId seq)) model_
 
                         Err err ->
                             let
@@ -158,11 +167,16 @@ update msg model =
                     ( m, Cmd.none )
 
         KifuMsg kifuMsg ->
-            let
-                ( kModel, kMsg ) =
-                    KB.update kifuMsg model.board
-            in
-            ( { model | board = kModel }, Cmd.none )
+            Maybe.withDefault ( model, Cmd.none ) <|
+                Maybe.map
+                    (\( game, kModel, step ) ->
+                        let
+                            ( kModel_, kMsg ) =
+                                KB.update kifuMsg kModel
+                        in
+                        ( { model | game = Just ( game, kModel_, step ) }, Cmd.map KifuMsg kMsg )
+                    )
+                    model.game
 
         ApiRequest req ->
             apiRequest model req

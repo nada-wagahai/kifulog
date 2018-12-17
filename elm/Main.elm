@@ -37,8 +37,6 @@ init flags url key =
                 , key = key
                 , url = url
                 , route = Route.toRoute url
-                , board = KB.init
-                , step = Model.initStep
                 , game = Nothing
                 , timeZone = ( Time.utc, Time.Name "UTC" )
                 }

@@ -185,8 +185,8 @@ stepsView model seq game =
                 game.steps
 
 
-controlView : Model -> Int -> Element Msg
-controlView model seq =
+controlView : Model -> Step -> Int -> Element Msg
+controlView model step seq =
     Elm.row [ Elm.width Elm.fill ] <|
         List.concat
             [ if seq == 0 then
@@ -198,7 +198,7 @@ controlView model seq =
                     , label = Elm.text "前"
                     }
                 ]
-            , if model.step.finished then
+            , if step.finished then
                 []
 
               else
@@ -217,25 +217,29 @@ linkView model =
 
 boardView : Model -> String -> Int -> Element Msg
 boardView model kifuId seq =
+    let
+        ( game, kModel, step ) =
+            Maybe.withDefault ( Model.initGame, KB.init, Model.initStep ) model.game
+    in
     Elm.column [ Elm.spacing 10 ]
-        [ Maybe.withDefault Elm.none <| Maybe.map (gameInfo model.timeZone) model.game
+        [ gameInfo model.timeZone game
         , Elm.row []
-            [ KB.viewElm model.board Msg.KifuMsg
-            , Maybe.withDefault Elm.none <| Maybe.map (stepsView model seq) model.game
+            [ KB.viewElm kModel Msg.KifuMsg
+            , stepsView model seq game
             ]
-        , stepView model.step
+        , stepView step
         , Input.multiline
             [ Elm.htmlAttribute (Attr.readonly True)
             , Elm.htmlAttribute (Attr.style "font-size" "small")
             , Elm.height (Elm.px 100)
             ]
             { onChange = always Msg.NopMsg
-            , text = String.join "\n" model.step.notes
+            , text = String.join "\n" step.notes
             , placeholder = Nothing
             , label = Input.labelHidden "notes"
             , spellcheck = False
             }
-        , controlView model seq
+        , controlView model step seq
         , linkView model
         ]
 

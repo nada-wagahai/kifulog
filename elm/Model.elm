@@ -1,4 +1,4 @@
-module Model exposing (Game, Model, Player, Step, Timestamp, initStep)
+module Model exposing (Game, Model, Player, Step, Timestamp, initGame, initStep)
 
 import Browser.Navigation as Nav
 import Kifu.Board as KB
@@ -38,6 +38,11 @@ type alias Timestamp =
     }
 
 
+initTimestamp : Timestamp
+initTimestamp =
+    Timestamp (Time.millisToPosix 0) (Time.millisToPosix 0)
+
+
 type alias Game =
     { players : List Player
     , timestamp : Timestamp
@@ -47,13 +52,16 @@ type alias Game =
     }
 
 
+initGame : Game
+initGame =
+    Game [] initTimestamp "" "" []
+
+
 type alias Model =
     { count : Int
     , key : Nav.Key
     , url : Url.Url
     , route : Route
-    , board : KB.Model
-    , step : Step
-    , game : Maybe Game
+    , game : Maybe ( Game, KB.Model, Step )
     , timeZone : ( Time.Zone, Time.ZoneName )
     }
