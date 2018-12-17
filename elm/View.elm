@@ -2,6 +2,7 @@ module View exposing (view)
 
 import Browser
 import Element as Elm exposing (Attribute, Element)
+import Element.Border as Border
 import Element.Events as Event
 import Element.Input as Input
 import Html exposing (Attribute, Html)
@@ -17,9 +18,17 @@ import Url
 
 header : Model -> Element Msg
 header model =
-    Elm.row []
-        --[ Elm.link [] { url = "../..", label = Elm.text "棋譜一覧" }
-        [ Elm.el [ Event.onClick (Msg.LinkClicked <| Browser.External "../..") ] <| Elm.text "棋譜一覧"
+    let
+        url =
+            model.url
+
+        url_ =
+            Url.toString { url | path = url.path ++ "/../../.." }
+    in
+    Elm.row [ Elm.padding 5 ]
+        [ Elm.link [ Elm.padding 2, Border.width 1, Border.rounded 3 ] { url = url_, label = Elm.text "棋譜一覧" }
+
+        -- [ Elm.el [ Event.onClick (Msg.LinkClicked <| Browser.External "../..") ] <| Elm.text "棋譜一覧"
         ]
 
 
@@ -149,7 +158,7 @@ timestampView t tz =
 
 gameInfo : ( Time.Zone, Time.ZoneName ) -> Kifu -> Element Msg
 gameInfo tz game =
-    Elm.column []
+    Elm.column [ Elm.padding 2, Elm.spacing 5 ]
         [ timestampView game.timestamp tz
         , playersView game.players
         , Elm.text <| "手割合: " ++ game.handicap
@@ -159,30 +168,31 @@ gameInfo tz game =
 
 stepsView : Model -> Int -> Kifu -> Element Msg
 stepsView model seq game =
-    Elm.html <|
-        Html.select [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "96px" ] <|
-            List.map
-                (\step ->
-                    let
-                        url =
-                            model.url
+    Elm.el [] <|
+        Elm.html <|
+            Html.select [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "96px" ] <|
+                List.map
+                    (\step ->
+                        let
+                            url =
+                                model.url
 
-                        url_ =
-                            { url
-                                | path =
-                                    url.path
-                                        ++ "/../"
-                                        ++ String.fromInt step.seq
-                            }
-                    in
-                    Html.option
-                        [ Attr.selected (seq == step.seq)
-                        , Attr.style "font-size" "larger"
-                        , HtmlEvent.onClick <| Msg.LinkClicked <| Browser.Internal url_
-                        ]
-                        [ Html.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
-                )
-                game.steps
+                            url_ =
+                                { url
+                                    | path =
+                                        url.path
+                                            ++ "/../"
+                                            ++ String.fromInt step.seq
+                                }
+                        in
+                        Html.option
+                            [ Attr.selected (seq == step.seq)
+                            , Attr.style "font-size" "larger"
+                            , HtmlEvent.onClick <| Msg.LinkClicked <| Browser.Internal url_
+                            ]
+                            [ Html.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
+                    )
+                    game.steps
 
 
 controlView : Model -> Element Msg
@@ -193,18 +203,18 @@ controlView model =
                 []
 
               else
-                [ Elm.link []
+                [ Elm.link [ Elm.padding 2, Border.width 1, Border.rounded 3 ]
                     { url = String.fromInt (model.game.step.seq - 1)
-                    , label = Elm.text "前"
+                    , label = Elm.text "←前"
                     }
                 ]
             , if model.game.step.finished then
                 []
 
               else
-                [ Elm.link [ Elm.alignRight ]
+                [ Elm.link [ Elm.alignRight, Elm.padding 2, Border.width 1, Border.rounded 3 ]
                     { url = String.fromInt (model.game.step.seq + 1)
-                    , label = Elm.text "次"
+                    , label = Elm.text "次→"
                     }
                 ]
             ]
@@ -219,7 +229,7 @@ boardView : Model -> Element Msg
 boardView model =
     Elm.column [ Elm.spacing 10 ]
         [ gameInfo model.timeZone model.game.kifu
-        , Elm.row []
+        , Elm.row [ Elm.padding 5, Elm.spacing 15 ]
             [ KB.viewElm model.game.kModel Msg.KifuMsg
             , stepsView model model.game.step.seq model.game.kifu
             ]
@@ -231,7 +241,7 @@ boardView model =
             ]
             { onChange = always Msg.NopMsg
             , text = String.join "\n" model.game.step.notes
-            , placeholder = Nothing
+            , placeholder = Just <| Input.placeholder [] (Elm.text "棋譜コメント")
             , label = Input.labelHidden "notes"
             , spellcheck = False
             }
@@ -253,7 +263,7 @@ content model =
 body : Model -> Html Msg
 body model =
     Elm.layout [] <|
-        Elm.column []
+        Elm.column [ Elm.padding 20 ]
             [ header model
             , content model
             ]
