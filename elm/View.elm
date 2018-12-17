@@ -8,7 +8,7 @@ import Html exposing (Attribute, Html)
 import Html.Attributes as Attr
 import Html.Events as HtmlEvent
 import Kifu.Board as KB
-import Model exposing (Game, Model, Player, Step, Timestamp)
+import Model exposing (Kifu, Model, Player, Step, Timestamp)
 import Route
 import Time
 import Update as Msg exposing (Msg)
@@ -147,7 +147,7 @@ timestampView t tz =
         ]
 
 
-gameInfo : ( Time.Zone, Time.ZoneName ) -> Game -> Element Msg
+gameInfo : ( Time.Zone, Time.ZoneName ) -> Kifu -> Element Msg
 gameInfo tz game =
     Elm.column []
         [ timestampView game.timestamp tz
@@ -157,7 +157,7 @@ gameInfo tz game =
         ]
 
 
-stepsView : Model -> Int -> Game -> Element Msg
+stepsView : Model -> Int -> Kifu -> Element Msg
 stepsView model seq game =
     Elm.html <|
         Html.select [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "96px" ] <|
@@ -219,7 +219,7 @@ boardView : Model -> String -> Int -> Element Msg
 boardView model kifuId seq =
     let
         ( game, kModel, step ) =
-            Maybe.withDefault ( Model.initGame, KB.init, Model.initStep ) model.game
+            Maybe.withDefault ( Model.initKifu, KB.init, Model.initStep ) model.game
     in
     Elm.column [ Elm.spacing 10 ]
         [ gameInfo model.timeZone game

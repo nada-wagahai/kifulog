@@ -107,14 +107,14 @@ apiResponse model res result =
         KifuGame kifuId seq ->
             case result of
                 Ok text ->
-                    case D.decodeString Decoder.game text of
-                        Ok game ->
+                    case D.decodeString Decoder.kifu text of
+                        Ok kifu ->
                             let
                                 model_ =
                                     Maybe.withDefault model <|
                                         Maybe.map
                                             (\( _, kModel, step ) ->
-                                                { model | game = Just ( game, kModel, step ) }
+                                                { model | game = Just ( kifu, kModel, step ) }
                                             )
                                             model.game
                             in
