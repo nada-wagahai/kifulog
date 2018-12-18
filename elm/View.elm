@@ -222,11 +222,11 @@ controlView model =
 
 commentsView : Model -> Element Msg
 commentsView model =
-    Elm.table [ Elm.spacing 15, Elm.width <| Elm.px 500 ]
+    Elm.table [ Elm.spacing 15, Elm.width <| Elm.px 700 ]
         { data = model.game.comments
         , columns =
             [ { header = Elm.none
-              , width = Elm.maximum 80 Elm.shrink
+              , width = Elm.maximum 50 Elm.shrink
               , view = \c -> Elm.paragraph [] [ Elm.text c.ownerId ]
               }
             , { header = Elm.none
@@ -258,7 +258,6 @@ boardView model =
             , spellcheck = False
             }
         , controlView model
-        , commentsView model
         ]
 
 
@@ -266,7 +265,10 @@ content : Model -> Element Msg
 content model =
     case model.route of
         Route.Kifu kifuId seq ->
-            boardView model
+            Elm.column [ Elm.spacing 20 ]
+                [ boardView model
+                , commentsView model
+                ]
 
         _ ->
             Elm.text "NotFound"
