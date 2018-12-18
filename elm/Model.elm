@@ -21,6 +21,7 @@ import Url
 
 type alias Step =
     { seq : Int
+    , boardId : String
     , curr :
         Maybe
             { pos : KB.Pos
@@ -35,7 +36,7 @@ type alias Step =
 
 initStep : Step
 initStep =
-    Step 0 Nothing KB.FIRST Nothing False []
+    Step 0 "" Nothing KB.FIRST Nothing False []
 
 
 type alias Player =
@@ -92,7 +93,8 @@ type alias Game =
     , step : Step
     , comments : List Comment
     , sameSteps : List SameStep
-    , boardCache : Dict Int ( KB.Model, List Comment, List SameStep )
+    , boardCache : Dict String ( KB.Model, List Comment, List SameStep )
+    , commentInput : String
     }
 
 
@@ -104,6 +106,7 @@ initGame =
     , comments = []
     , sameSteps = []
     , boardCache = Dict.empty
+    , commentInput = ""
     }
 
 

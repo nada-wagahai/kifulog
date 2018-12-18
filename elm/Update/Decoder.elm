@@ -66,8 +66,10 @@ pos label =
 
 step : D.Decoder Step
 step =
-    D.map6 Step
+    D.map7 Step
         (D.field "seq" D.int)
+        -- boardId dummy
+        (D.succeed "")
         (D.map2 (\pi -> Maybe.map (\p -> { pos = p, piece = pi }))
             (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
             (pos "pos")

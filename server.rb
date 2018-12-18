@@ -4,6 +4,7 @@ require 'sinatra/base'
 require 'sinatra/cookies'
 require 'bcrypt'
 require 'securerandom'
+require 'json'
 
 require 'proto/config_pb'
 require 'proto/kifu_pb'
@@ -119,6 +120,35 @@ class Server < Sinatra::Base
     end
 
     kifu.to_json
+  end
+
+  post '/api/board/:board_id/comment' do
+    authorize!
+    not_found if !login?
+
+    data = JSON.parse request.body.read
+
+    not_found unless data.key?('comment') && data.key?('kifu_id') && data.key?('seq')
+
+    kifu = @@db.get_kifu(data['kifu_id'])
+    not_found if kifu.nil? || !kifu.alias.empty?
+
+    timestamp = (Time.now.to_f * 1000).to_i
+    comment = Comment::Comment.new(
+      id: SecureRandom.uuid,
+      owner_id: @session.account_id,
+      text: data['comment'],
+      created_ms: timestamp,
+      updated_ms: timestamp,
+      board_id: params['board_id'],
+      kifu_id: data['kifu_id'],
+      seq: data['seq'].to_i,
+    )
+
+    @@db.put_comment(comment)
+    @@index.put_comment(comment)
+
+    "true"
   end
 
   get '/api/board/:board_id' do

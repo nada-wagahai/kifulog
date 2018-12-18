@@ -5,7 +5,7 @@ import Element as Elm exposing (Attribute, Element)
 import Element.Border as Border
 import Element.Events as Event
 import Element.Input as Input
-import Html exposing (Attribute, Html)
+import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as HtmlEvent
 import Kifu.Board as KB
@@ -14,6 +14,11 @@ import Route
 import Time
 import Update as Msg exposing (Msg)
 import Url
+
+
+linkStyles : List (Attribute msg)
+linkStyles =
+    [ Elm.padding 2, Border.width 1, Border.rounded 3 ]
 
 
 header : Model -> Element Msg
@@ -26,9 +31,8 @@ header model =
             Url.toString { url | path = url.path ++ "/../../.." }
     in
     Elm.row [ Elm.padding 5 ]
-        [ Elm.link [ Elm.padding 2, Border.width 1, Border.rounded 3 ] { url = url_, label = Elm.text "棋譜一覧" }
-
-        -- [ Elm.el [ Event.onClick (Msg.LinkClicked <| Browser.External "../..") ] <| Elm.text "棋譜一覧"
+        -- [ Elm.link linkStyles { url = url_, label = Elm.text "棋譜一覧" }
+        [ Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "../..") :: linkStyles) <| Elm.text "棋譜一覧"
         ]
 
 
@@ -227,19 +231,34 @@ controlView model =
 
 commentsView : Model -> Element Msg
 commentsView model =
-    Elm.table [ Elm.spacing 15, Elm.width <| Elm.px 700 ]
-        { data = model.game.comments
-        , columns =
-            [ { header = Elm.none
-              , width = Elm.maximum 50 Elm.shrink
-              , view = \c -> Elm.paragraph [] [ Elm.text c.ownerId ]
-              }
-            , { header = Elm.none
-              , width = Elm.fill
-              , view = \c -> Elm.paragraph [] [ Elm.text c.text ]
-              }
-            ]
-        }
+    Elm.column [ Elm.spacing 20 ]
+        [ Elm.table [ Elm.spacing 10, Elm.width <| Elm.px 600 ]
+            { data = model.game.comments
+            , columns =
+                [ { header = Elm.none
+                  , width = Elm.maximum 50 Elm.shrink
+                  , view = \c -> Elm.paragraph [] [ Elm.text c.ownerId ]
+                  }
+                , { header = Elm.none
+                  , width = Elm.fill
+                  , view = \c -> Elm.paragraph [] [ Elm.text c.text ]
+                  }
+                ]
+            }
+        , Input.text []
+            { onChange = Msg.CommentInput
+            , text = model.game.commentInput
+            , placeholder = Nothing
+            , label = Input.labelHidden "comment"
+            }
+        , Input.button linkStyles
+            { onPress =
+                Just <|
+                    Msg.ApiRequest <|
+                        Msg.KifuPostComment model.game.step.boardId model.game.commentInput
+            , label = Elm.text "post comment"
+            }
+        ]
 
 
 sameSteps : Model -> Element Msg
@@ -332,6 +351,6 @@ view model =
     }
 
 
-viewLink : List (Attribute Msg) -> String -> Html Msg
+viewLink : List (Html.Attribute Msg) -> String -> Html Msg
 viewLink attrs path =
     Html.li [] [ Html.a (Attr.href path :: attrs) [ Html.text path ] ]

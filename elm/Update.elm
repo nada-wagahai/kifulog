@@ -1,10 +1,11 @@
-module Update exposing (Msg(..), update)
+module Update exposing (KifuRequest(..), Msg(..), update)
 
 import Browser
 import Browser.Navigation as Nav
 import Dict
 import Http
 import Json.Decode as D
+import Json.Encode as E
 import Kifu.Board as KB
 import Model exposing (Comment, Model, SameStep, Step)
 import Route
@@ -16,6 +17,7 @@ import Url
 type KifuRequest
     = KifuScene String Int
     | KifuGame String Int
+    | KifuPostComment String String
 
 
 type Msg
@@ -25,6 +27,7 @@ type Msg
     | ApiRequest KifuRequest
     | ApiResponse KifuRequest (Result Http.Error String)
     | SetZone ( Time.Zone, Time.ZoneName )
+    | CommentInput String
     | NopMsg
 
 
@@ -70,7 +73,7 @@ apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
 apiRequest model req =
     case req of
         KifuScene boardId seq ->
-            case Dict.get seq model.game.boardCache of
+            case Dict.get boardId model.game.boardCache of
                 Nothing ->
                     ( model
                     , Http.get
@@ -93,6 +96,32 @@ apiRequest model req =
                     , expect = Http.expectString (ApiResponse req)
                     }
                 )
+
+        KifuPostComment boardId comment ->
+            let
+                game =
+                    model.game
+
+                body =
+                    E.object
+                        [ ( "comment", E.string comment )
+                        , ( "kifu_id", E.string game.kifu.kifuId )
+                        , ( "seq", E.int game.step.seq )
+                        ]
+            in
+            ( { model
+                | game =
+                    { game
+                        | commentInput = ""
+                        , boardCache = Dict.remove boardId game.boardCache
+                    }
+              }
+            , Http.post
+                { url = "/api/board/" ++ boardId ++ "/comment"
+                , body = Http.jsonBody body
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
 
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
@@ -123,12 +152,24 @@ apiResponse model res result =
                                     let
                                         game =
                                             model.game
+
+                                        steps =
+                                            List.map
+                                                (\step ->
+                                                    case get step.seq kifu.boardIds of
+                                                        Nothing ->
+                                                            step
+
+                                                        Just bid ->
+                                                            { step | boardId = bid }
+                                                )
+                                                kifu.steps
                                     in
                                     update (ApiRequest (KifuScene boardId seq))
                                         { model
                                             | game =
                                                 { game
-                                                    | kifu = kifu
+                                                    | kifu = { kifu | steps = steps }
                                                     , boardCache = Dict.empty
                                                 }
                                         }
@@ -139,6 +180,9 @@ apiResponse model res result =
                                     Debug.log "game json" err
                             in
                             ( model, Cmd.none )
+
+                KifuPostComment _ _ ->
+                    update (LinkClicked (Browser.Internal model.url)) model
 
         Err err ->
             let
@@ -189,14 +233,23 @@ update msg model =
 
                 ( kModel_, kMsg ) =
                     KB.update kifuMsg game.kModel
+
+                game_ =
+                    case get game.step.seq game.kifu.boardIds of
+                        Nothing ->
+                            { game | kModel = kModel_ }
+
+                        Just boardId ->
+                            { game
+                                | kModel = kModel_
+                                , boardCache =
+                                    Dict.insert
+                                        boardId
+                                        ( kModel_, game.comments, game.sameSteps )
+                                        game.boardCache
+                            }
             in
-            ( { model
-                | game =
-                    { game
-                        | kModel = kModel_
-                        , boardCache = Dict.insert game.step.seq ( kModel_, game.comments, game.sameSteps ) game.boardCache
-                    }
-              }
+            ( { model | game = game_ }
             , Cmd.map KifuMsg kMsg
             )
 
@@ -208,6 +261,13 @@ update msg model =
 
         SetZone zone ->
             ( { model | timeZone = zone }, Cmd.none )
+
+        CommentInput text ->
+            let
+                game =
+                    model.game
+            in
+            ( { model | game = { game | commentInput = text } }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
