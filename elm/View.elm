@@ -26,9 +26,8 @@ header model =
             Url.toString { url | path = url.path ++ "/../../.." }
     in
     Elm.row [ Elm.padding 5 ]
-        [ Elm.link [ Elm.padding 2, Border.width 1, Border.rounded 3 ] { url = url_, label = Elm.text "棋譜一覧" }
-
-        -- [ Elm.el [ Event.onClick (Msg.LinkClicked <| Browser.External "../..") ] <| Elm.text "棋譜一覧"
+        -- [ Elm.link [ Elm.padding 2, Border.width 1, Border.rounded 3 ] { url = url_, label = Elm.text "棋譜一覧" }
+        [ Elm.el [ Event.onClick (Msg.LinkClicked <| Browser.External "../.."), Elm.padding 2, Border.width 1, Border.rounded 3 ] <| Elm.text "棋譜一覧"
         ]
 
 
