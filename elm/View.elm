@@ -220,14 +220,21 @@ controlView model =
             ]
 
 
-commentView : Model -> Element Msg
-commentView model =
-    Elm.column [] <|
-        List.map
-            (\comment ->
-                Elm.text comment.text
-            )
-            model.game.comments
+commentsView : Model -> Element Msg
+commentsView model =
+    Elm.table [ Elm.spacing 15, Elm.width <| Elm.px 500 ]
+        { data = model.game.comments
+        , columns =
+            [ { header = Elm.none
+              , width = Elm.maximum 80 Elm.shrink
+              , view = \c -> Elm.paragraph [] [ Elm.text c.ownerId ]
+              }
+            , { header = Elm.none
+              , width = Elm.fill
+              , view = \c -> Elm.paragraph [] [ Elm.text c.text ]
+              }
+            ]
+        }
 
 
 boardView : Model -> Element Msg
@@ -251,7 +258,7 @@ boardView model =
             , spellcheck = False
             }
         , controlView model
-        , commentView model
+        , commentsView model
         ]
 
 

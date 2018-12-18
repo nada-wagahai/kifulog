@@ -5,16 +5,16 @@ require 'sinatra/cookies'
 require 'bcrypt'
 require 'securerandom'
 
-require './proto/config_pb'
-require './proto/kifu_pb'
-require './proto/account_pb'
-require './proto/comment_pb'
-require './proto/api_pb'
+require 'proto/config_pb'
+require 'proto/kifu_pb'
+require 'proto/account_pb'
+require 'proto/comment_pb'
+require 'proto/api_pb'
 
-require './lib/parser'
-require './lib/pb'
-require './lib/db/file'
-require './lib/index/es'
+require 'lib/parser'
+require 'lib/pb'
+require 'lib/db/file'
+require 'lib/index/es'
 
 def prepare(config)
   Dir.mkdir config.data_dir if !Dir.exist? config.data_dir
@@ -105,33 +105,6 @@ class Server < Sinatra::Base
     erb :index
   end
 
-  get '/kifu/:id/' do
-    authorize!
-
-    kifu = @@db.get_kifu(params['id'])
-    not_found if kifu.nil?
-
-    if !kifu.alias.empty?
-      redirect to('/kifu/%s/' % kifu.alias)
-    end
-
-    player_map([kifu])
-
-    comment_ids = @@index.search_comment(kifu_id: params['id'])
-    comments = @@db.batch_get_comments(comment_ids)
-
-    @seq_comment = Hash.new []
-    comments.each {|c|
-      @seq_comment[c.seq] += [c]
-    }
-
-    erb :kifu, :locals => {
-      kifu: kifu,
-      params: params,
-      session: @session,
-    }
-  end
-
   get '/api/kifu/:kifu_id' do
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
@@ -151,6 +124,13 @@ class Server < Sinatra::Base
 
     comment_ids = @@index.search_comment(board_id: params['board_id'])
     comments = @@db.batch_get_comments(comment_ids)
+
+    account_ids = comments.select{|c|!c.nil?}.map {|c| c.owner_id }
+    owner_map = @@db.batch_get_account(account_ids).map {|a| [a.id, a.name]}.to_h
+    comments.map! {|comment|
+      comment.owner_id = owner_map[comment.owner_id]
+      comment
+    }
 
     Api::BoardResponse.new(board: board, comments: comments).to_json
   end
