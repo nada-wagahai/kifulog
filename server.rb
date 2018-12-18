@@ -106,6 +106,8 @@ class Server < Sinatra::Base
   end
 
   get '/api/kifu/:kifu_id' do
+    authorize!
+
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
@@ -120,9 +122,13 @@ class Server < Sinatra::Base
   end
 
   get '/api/board/:board_id' do
-    board = @@db.get_board(params['board_id'])
+    authorize!
 
-    comment_ids = @@index.search_comment(board_id: params['board_id'])
+    board_id = params['board_id']
+
+    board = @@db.get_board(board_id)
+
+    comment_ids = @@index.search_comment(board_id: board_id)
     comments = @@db.batch_get_comments(comment_ids)
 
     account_ids = comments.select{|c|!c.nil?}.map {|c| c.owner_id }
@@ -132,7 +138,33 @@ class Server < Sinatra::Base
       comment
     }
 
-    Api::BoardResponse.new(board: board, comments: comments).to_json
+    step_ids = @@index.search_step(board_id)
+    kifus = @@db.batch_get_kifu(step_ids.map {|s| s.kifu_id })
+
+    player_map(kifus)
+    kifus.map! do |kifu|
+      kifu.players.map! do |player|
+        name = mask(player.name)
+        player.name = name
+        player
+      end
+      kifu
+    end
+
+    steps = step_ids.zip(kifus).map {|step_id, kifu|
+      Api::Step.new(
+        kifu_id: step_id.kifu_id,
+        seq: step_id.seq,
+        start_ts: kifu.start_ts,
+        players: kifu.players.to_a,
+      )
+    }
+
+    Api::BoardResponse.new(
+      board: board,
+      comments: comments,
+      steps: steps,
+    ).to_json
   end
 
   get '/kifu/:kifu_id' do

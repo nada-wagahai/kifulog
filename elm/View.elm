@@ -32,6 +32,11 @@ header model =
         ]
 
 
+playersToStr : List Player -> String
+playersToStr players =
+    String.join ", " (List.map (\p -> p.name) players)
+
+
 playersView : List Player -> Element Msg
 playersView players =
     let
@@ -39,8 +44,8 @@ playersView players =
             List.partition (\p -> p.order == KB.FIRST) players
     in
     Elm.column []
-        [ Elm.text <| "☗先手: " ++ String.join ", " (List.map (\p -> p.name) firsts)
-        , Elm.text <| "☖後手: " ++ String.join ", " (List.map (\p -> p.name) seconds)
+        [ Elm.text <| "☗先手: " ++ playersToStr firsts
+        , Elm.text <| "☖後手: " ++ playersToStr seconds
         ]
 
 
@@ -237,6 +242,40 @@ commentsView model =
         }
 
 
+sameSteps : Model -> Element Msg
+sameSteps model =
+    let
+        myself s =
+            s.kifuId /= model.game.kifu.kifuId || s.seq /= model.game.step.seq
+
+        steps =
+            List.filter myself model.game.sameSteps
+
+        stepLink step =
+            let
+                ( fs, ss ) =
+                    List.partition (\p -> p.order == KB.FIRST) step.players
+            in
+            Elm.el [] <|
+                Elm.link []
+                    { url = "../" ++ step.kifuId ++ "/" ++ String.fromInt step.seq
+                    , label =
+                        Elm.text
+                            (playersToStr fs
+                                ++ " - "
+                                ++ playersToStr ss
+                                ++ " ("
+                                ++ String.fromInt step.seq
+                                ++ "手) "
+                                ++ posixToStr step.start model.timeZone
+                            )
+                    }
+    in
+    Elm.column [ Elm.paddingXY 10 30, Elm.spacing 5, Elm.alignTop ] <|
+        Elm.el [ Elm.paddingXY 0 5 ] (Elm.text "同一局面")
+            :: List.map stepLink steps
+
+
 boardView : Model -> Element Msg
 boardView model =
     Elm.column [ Elm.spacing 10 ]
@@ -266,7 +305,10 @@ content model =
     case model.route of
         Route.Kifu kifuId seq ->
             Elm.column [ Elm.spacing 20 ]
-                [ boardView model
+                [ Elm.row []
+                    [ boardView model
+                    , sameSteps model
+                    ]
                 , commentsView model
                 ]
 

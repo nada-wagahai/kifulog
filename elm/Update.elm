@@ -6,7 +6,7 @@ import Dict
 import Http
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Comment, Model, Step)
+import Model exposing (Comment, Model, SameStep, Step)
 import Route
 import Time
 import Update.Decoder as Decoder
@@ -41,8 +41,8 @@ get i =
     List.head << List.drop i
 
 
-updateScene : Model -> (Step -> KB.Scene) -> List Comment -> Int -> ( Model, Cmd Msg )
-updateScene model sceneF comments seq =
+updateScene : Model -> (Step -> KB.Scene) -> List Comment -> List SameStep -> Int -> ( Model, Cmd Msg )
+updateScene model sceneF comments steps seq =
     let
         game =
             model.game
@@ -61,6 +61,7 @@ updateScene model sceneF comments seq =
                 { game
                     | step = step
                     , comments = comments
+                    , sameSteps = steps
                 }
         }
 
@@ -78,8 +79,8 @@ apiRequest model req =
                         }
                     )
 
-                Just ( board, comments ) ->
-                    updateScene model (always board.scene) comments seq
+                Just ( board, comments, steps ) ->
+                    updateScene model (always board.scene) comments steps seq
 
         KifuGame kifuId seq ->
             if model.game.kifu.kifuId == kifuId then
@@ -101,8 +102,8 @@ apiResponse model res result =
             case res of
                 KifuScene _ seq ->
                     case D.decodeString Decoder.board text of
-                        Ok ( pieces, comments ) ->
-                            updateScene model (mkScene pieces) comments seq
+                        Ok ( pieces, comments, steps ) ->
+                            updateScene model (mkScene pieces) comments steps seq
 
                         Err err ->
                             let
@@ -193,7 +194,7 @@ update msg model =
                 | game =
                     { game
                         | kModel = kModel_
-                        , boardCache = Dict.insert game.step.seq ( kModel_, game.comments ) game.boardCache
+                        , boardCache = Dict.insert game.step.seq ( kModel_, game.comments, game.sameSteps ) game.boardCache
                     }
               }
             , Cmd.map KifuMsg kMsg

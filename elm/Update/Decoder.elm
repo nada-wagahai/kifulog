@@ -7,7 +7,7 @@ module Update.Decoder exposing
 
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Comment, Kifu, Step)
+import Model exposing (Comment, Kifu, Player, SameStep, Step)
 import Time
 
 
@@ -21,20 +21,23 @@ fieldDefault label a =
     D.map (Maybe.withDefault a) << fieldMaybe label
 
 
-player : String -> D.Decoder KB.Player
-player label =
+order : String -> D.Decoder KB.Player
+order label =
     D.map KB.playerFromString <| fieldDefault label "FIRST" D.string
+
+
+players : D.Decoder (List Player)
+players =
+    D.list <|
+        D.map2 Model.Player
+            (order "order")
+            (D.field "name" D.string)
 
 
 kifu : String -> D.Decoder Kifu
 kifu kifuId =
     D.map6 (Kifu kifuId)
-        (D.field "players" <|
-            D.list <|
-                D.map2 Model.Player
-                    (player "order")
-                    (D.field "name" D.string)
-        )
+        (D.field "players" players)
         (D.map2 Model.Timestamp
             (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "startTs" D.int)
             (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "endTs" D.int)
@@ -69,7 +72,7 @@ step =
             (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
             (pos "pos")
         )
-        (player "player")
+        (order "player")
         (pos "prev")
         (fieldDefault "finished" False D.bool)
         (D.field "notes" <| D.list D.string)
@@ -82,7 +85,7 @@ pieces label =
             D.map3 KB.Piece
                 (D.map KB.pieceFromString <| D.field "type" D.string)
                 (pos "pos")
-                (player "order")
+                (order "order")
 
 
 comments : D.Decoder (List Comment)
@@ -94,8 +97,19 @@ comments =
             (D.field "text" D.string)
 
 
-board : D.Decoder ( List KB.Piece, List Comment )
+sameSteps : D.Decoder (List SameStep)
+sameSteps =
+    D.list <|
+        D.map4 SameStep
+            (D.field "kifuId" D.string)
+            (D.field "seq" D.int)
+            (D.field "players" players)
+            (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "startTs" D.int)
+
+
+board : D.Decoder ( List KB.Piece, List Comment, List SameStep )
 board =
-    D.map2 Tuple.pair
+    D.map3 (\a b c -> ( a, b, c ))
         (D.field "board" <| pieces "pieces")
         (D.field "comments" comments)
+        (D.field "steps" sameSteps)
