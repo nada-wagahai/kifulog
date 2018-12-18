@@ -1,5 +1,6 @@
 module Update.Decoder exposing
-    ( comments
+    ( board
+    , comments
     , kifu
     , pieces
     )
@@ -91,3 +92,10 @@ comments =
             (D.field "id" D.string)
             (D.field "ownerId" D.string)
             (D.field "text" D.string)
+
+
+board : D.Decoder ( List KB.Piece, List Comment )
+board =
+    D.map2 Tuple.pair
+        (D.field "board" <| pieces "pieces")
+        (D.field "comments" comments)

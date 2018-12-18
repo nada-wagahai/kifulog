@@ -9,6 +9,7 @@ require './proto/config_pb'
 require './proto/kifu_pb'
 require './proto/account_pb'
 require './proto/comment_pb'
+require './proto/api_pb'
 
 require './lib/parser'
 require './lib/pb'
@@ -147,13 +148,11 @@ class Server < Sinatra::Base
 
   get '/api/board/:board_id' do
     board = @@db.get_board(params['board_id'])
-    board.to_json
-  end
 
-  get '/api/comments/:board_id' do
     comment_ids = @@index.search_comment(board_id: params['board_id'])
     comments = @@db.batch_get_comments(comment_ids)
-    Comment::CommentList.new(comments: comments).to_json
+
+    Api::BoardResponse.new(board: board, comments: comments).to_json
   end
 
   get '/kifu/:kifu_id' do

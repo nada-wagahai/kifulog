@@ -14,12 +14,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :kifu_id, :string, 7
     optional :seq, :int32, 8
   end
-  add_message "comment.CommentList" do
-    repeated :comments, :message, 1, "comment.Comment"
-  end
 end
 
 module Comment
   Comment = Google::Protobuf::DescriptorPool.generated_pool.lookup("comment.Comment").msgclass
-  CommentList = Google::Protobuf::DescriptorPool.generated_pool.lookup("comment.CommentList").msgclass
 end

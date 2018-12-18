@@ -220,9 +220,14 @@ controlView model =
             ]
 
 
-linkView : Model -> Element Msg
-linkView model =
-    Elm.text ""
+commentView : Model -> Element Msg
+commentView model =
+    Elm.column [] <|
+        List.map
+            (\comment ->
+                Elm.text comment.text
+            )
+            model.game.comments
 
 
 boardView : Model -> Element Msg
@@ -246,7 +251,7 @@ boardView model =
             , spellcheck = False
             }
         , controlView model
-        , linkView model
+        , commentView model
         ]
 
 

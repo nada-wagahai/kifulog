@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api;
+
+import 'proto/comment.proto';
+import 'proto/kifu.proto';
+
+message BoardResponse {
+  kifu.Board board = 1;
+  repeated comment.Comment comments = 2;
+}

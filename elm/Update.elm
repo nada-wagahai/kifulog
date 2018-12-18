@@ -6,7 +6,7 @@ import Dict
 import Http
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Model, Step)
+import Model exposing (Comment, Model, Step)
 import Route
 import Time
 import Update.Decoder as Decoder
@@ -16,7 +16,6 @@ import Url
 type KifuRequest
     = KifuScene String Int
     | KifuGame String Int
-    | KifuComment String
 
 
 type Msg
@@ -42,8 +41,8 @@ get i =
     List.head << List.drop i
 
 
-updateScene : Model -> (Step -> KB.Scene) -> Int -> ( Model, Cmd Msg )
-updateScene model sceneF seq =
+updateScene : Model -> (Step -> KB.Scene) -> List Comment -> Int -> ( Model, Cmd Msg )
+updateScene model sceneF comments seq =
     let
         game =
             model.game
@@ -57,7 +56,13 @@ updateScene model sceneF seq =
     in
     update
         (KifuMsg <| KB.UpdateScene <| sceneF step)
-        { model | game = { game | step = step } }
+        { model
+            | game =
+                { game
+                    | step = step
+                    , comments = comments
+                }
+        }
 
 
 apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
@@ -73,8 +78,8 @@ apiRequest model req =
                         }
                     )
 
-                Just b ->
-                    updateScene model (always b.scene) seq
+                Just ( board, comments ) ->
+                    updateScene model (always board.scene) comments seq
 
         KifuGame kifuId seq ->
             if model.game.kifu.kifuId == kifuId then
@@ -88,14 +93,6 @@ apiRequest model req =
                     }
                 )
 
-        KifuComment boardId ->
-            ( model
-            , Http.get
-                { url = "/api/comments/" ++ boardId
-                , expect = Http.expectString (ApiResponse req)
-                }
-            )
-
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
 apiResponse model res result =
@@ -103,9 +100,9 @@ apiResponse model res result =
         Ok text ->
             case res of
                 KifuScene _ seq ->
-                    case D.decodeString (Decoder.pieces "pieces") text of
-                        Ok pieces ->
-                            updateScene model (mkScene pieces) seq
+                    case D.decodeString Decoder.board text of
+                        Ok ( pieces, comments ) ->
+                            updateScene model (mkScene pieces) comments seq
 
                         Err err ->
                             let
@@ -139,26 +136,6 @@ apiResponse model res result =
                             let
                                 a_ =
                                     Debug.log "game json" err
-                            in
-                            ( model, Cmd.none )
-
-                KifuComment boardId ->
-                    case D.decodeString (D.field "comments" Decoder.comments) text of
-                        Ok comments ->
-                            let
-                                game =
-                                    model.game
-                            in
-                            ( { model
-                                | game = { game | comments = comments }
-                              }
-                            , Cmd.none
-                            )
-
-                        Err err ->
-                            let
-                                a_ =
-                                    Debug.log "comment json" err
                             in
                             ( model, Cmd.none )
 
@@ -216,7 +193,7 @@ update msg model =
                 | game =
                     { game
                         | kModel = kModel_
-                        , boardCache = Dict.insert game.step.seq kModel_ game.boardCache
+                        , boardCache = Dict.insert game.step.seq ( kModel_, game.comments ) game.boardCache
                     }
               }
             , Cmd.map KifuMsg kMsg

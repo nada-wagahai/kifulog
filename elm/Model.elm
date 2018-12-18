@@ -72,7 +72,7 @@ type alias Game =
     , kModel : KB.Model
     , step : Step
     , comments : List Comment
-    , boardCache : Dict Int KB.Model
+    , boardCache : Dict Int ( KB.Model, List Comment )
     }
 
 
