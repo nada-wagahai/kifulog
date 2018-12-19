@@ -4,6 +4,7 @@ require 'sinatra/base'
 require 'sinatra/cookies'
 require 'bcrypt'
 require 'securerandom'
+require 'json'
 
 require 'proto/config_pb'
 require 'proto/kifu_pb'
@@ -119,6 +120,14 @@ class Server < Sinatra::Base
     end
 
     kifu.to_json
+  end
+
+  post '/api/board/:board_id/comment' do
+    authorize!
+    
+    data = JSON.parse request.body.read
+
+    "true"
   end
 
   get '/api/board/:board_id' do

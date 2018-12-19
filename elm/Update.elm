@@ -16,6 +16,7 @@ import Url
 type KifuRequest
     = KifuScene String Int
     | KifuGame String Int
+    | KifuPostComment String String
 
 
 type Msg
@@ -93,6 +94,15 @@ apiRequest model req =
                     , expect = Http.expectString (ApiResponse req)
                     }
                 )
+
+        KifuGame boardId comment ->
+            ( model
+            , Http.post
+                { url = "/api/board/" ++ boardId ++ "/comment"
+                , body = Http.jsonBody
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
 
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
