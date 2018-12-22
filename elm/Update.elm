@@ -18,6 +18,7 @@ type KifuRequest
     = KifuScene String Int
     | KifuGame String Int
     | KifuPostComment String String
+    | KifuDeleteComment String
 
 
 type Msg
@@ -123,6 +124,24 @@ apiRequest model req =
                 }
             )
 
+        KifuDeleteComment commentId ->
+            let
+                game =
+                    model.game
+            in
+            ( { model
+                | game =
+                    { game
+                        | boardCache = Dict.remove game.step.boardId game.boardCache
+                    }
+              }
+            , Http.post
+                { url = "/api/comment/" ++ commentId ++ "/delete"
+                , body = Http.emptyBody
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
+
 
 apiResponse : Model -> KifuRequest -> Result Http.Error String -> ( Model, Cmd Msg )
 apiResponse model res result =
@@ -174,6 +193,9 @@ apiResponse model res result =
                             ( model, Cmd.none )
 
                 KifuPostComment _ _ ->
+                    update (LinkClicked (Browser.Internal model.url)) model
+
+                KifuDeleteComment _ ->
                     update (LinkClicked (Browser.Internal model.url)) model
 
         Err err ->

@@ -164,8 +164,12 @@ class Server < Sinatra::Base
     account_ids = comments.select{|c|!c.nil?}.map {|c| c.owner_id }
     owner_map = @@db.batch_get_account(account_ids).map {|a| [a.id, a.name]}.to_h
     comments.map! {|comment|
-      comment.owner_id = owner_map[comment.owner_id]
-      comment
+      Api::Comment.new(
+        id: comment.id,
+        name: owner_map[comment.owner_id],
+        text: comment.text,
+        owned: !@session.nil? && comment.owner_id == @session.account_id,
+      )
     }
 
     step_ids = @@index.search_step(board_id)
@@ -195,6 +199,22 @@ class Server < Sinatra::Base
       comments: comments,
       steps: steps,
     ).to_json
+  end
+
+  post "/api/comment/:comment_id/delete" do
+    authorize!
+
+    not_found if !login?
+
+    comments = @@db.batch_get_comments([params["comment_id"]])
+    comment = comments.shift
+    not_found if comment.nil?
+    not_found if @session.role != :ADMIN && comment.owner_id != @session.account_id
+
+    @@db.delete_comment(comment.id)
+    @@index.delete_comment(comment.id)
+
+    "true"
   end
 
   get '/kifu/:kifu_id' do

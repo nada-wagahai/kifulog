@@ -13,6 +13,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :board_id, :string, 6
     optional :kifu_id, :string, 7
     optional :seq, :int32, 8
+    optional :owned, :bool, 9
   end
 end
 

@@ -182,6 +182,6 @@ class EsIndex
 
   def delete_comment(comment_id)
     id = "COMMENT:%s" % comment_id
-    @client.delete index: @index, type: "doc", id: id
+    @client.delete index: @index, type: "doc", id: id, refresh:true
   end
 end

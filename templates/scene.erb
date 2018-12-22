@@ -16,7 +16,11 @@
     <script>
 const app = Elm.Main.init({
   node: document.getElementById("main"),
-  flags: <%= login? %>
+  <% if login? %>
+  flags: {"accountId": "<%= @session.account_id %>" }
+  <% else %>
+  flags: null
+  <% end %>
 });
     </script>
   </body>

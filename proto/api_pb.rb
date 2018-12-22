@@ -12,14 +12,21 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :start_ts, :int64, 3
     repeated :players, :message, 4, "kifu.Player"
   end
+  add_message "api.Comment" do
+    optional :id, :string, 1
+    optional :name, :string, 2
+    optional :text, :string, 3
+    optional :owned, :bool, 4
+  end
   add_message "api.BoardResponse" do
     optional :board, :message, 1, "kifu.Board"
-    repeated :comments, :message, 2, "comment.Comment"
+    repeated :comments, :message, 2, "api.Comment"
     repeated :steps, :message, 3, "api.Step"
   end
 end
 
 module Api
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.Step").msgclass
+  Comment = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.Comment").msgclass
   BoardResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.BoardResponse").msgclass
 end

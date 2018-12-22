@@ -93,10 +93,11 @@ pieces label =
 comments : D.Decoder (List Comment)
 comments =
     D.list <|
-        D.map3 Comment
+        D.map4 Comment
             (D.field "id" D.string)
-            (D.field "ownerId" D.string)
+            (D.field "name" D.string)
             (D.field "text" D.string)
+            (fieldDefault "owned" False D.bool)
 
 
 sameSteps : D.Decoder (List SameStep)

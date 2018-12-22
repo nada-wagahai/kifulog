@@ -12,8 +12,15 @@ message Step {
   repeated kifu.Player players = 4;
 }
 
+message Comment {
+  string id = 1;
+  string name = 2;
+  string text = 3;
+  bool owned = 4;
+}
+
 message BoardResponse {
   kifu.Board board = 1;
-  repeated comment.Comment comments = 2;
+  repeated Comment comments = 2;
   repeated Step steps = 3;
 }

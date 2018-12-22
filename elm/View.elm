@@ -53,6 +53,16 @@ playersView players =
         ]
 
 
+prevPos : Maybe KB.Pos -> String
+prevPos prev =
+    case prev of
+        Nothing ->
+            "打"
+
+        Just p ->
+            "(" ++ String.fromInt p.x ++ String.fromInt p.y ++ ")"
+
+
 symbol : Step -> String
 symbol step =
     KB.playerToSymbol step.player
@@ -63,13 +73,18 @@ symbol step =
              else
                 ""
             )
-            (Maybe.map (\c -> KB.posToString c.pos ++ KB.pieceText c.piece) step.curr)
+            (Maybe.map
+                (\c ->
+                    KB.posToString c.pos ++ KB.pieceText c.piece ++ prevPos step.prev
+                )
+                step.curr
+            )
 
 
 stepView : Step -> Element msg
 stepView step =
-    Elm.el [] <|
-        Elm.text <|
+    Elm.column []
+        [ Elm.text <|
             if step.seq == 0 then
                 "開始前"
 
@@ -83,6 +98,7 @@ stepView step =
                         else
                             " まで"
                        )
+        ]
 
 
 monthNumber : Time.Month -> Int
@@ -179,7 +195,9 @@ stepsView : Model -> Int -> Kifu -> Element Msg
 stepsView model seq game =
     Elm.el [] <|
         Elm.html <|
-            Html.select [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "96px" ] <|
+            Html.select
+                [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "128px" ]
+            <|
                 List.map
                     (\step ->
                         let
@@ -237,34 +255,57 @@ commentsView model =
             , columns =
                 [ { header = Elm.none
                   , width = Elm.maximum 50 Elm.shrink
-                  , view = \c -> Elm.paragraph [] [ Elm.text c.ownerId ]
+                  , view = \c -> Elm.paragraph [] [ Elm.text c.name ]
                   }
                 , { header = Elm.none
                   , width = Elm.fill
                   , view = \c -> Elm.paragraph [] [ Elm.text c.text ]
                   }
+                , { header = Elm.none
+                  , width = Elm.shrink
+                  , view =
+                        \c ->
+                            case model.login of
+                                Nothing ->
+                                    Elm.none
+
+                                Just s ->
+                                    if c.owned then
+                                        Input.button linkStyles
+                                            { onPress = Just <| Msg.ApiRequest (Msg.KifuDeleteComment c.id)
+                                            , label =
+                                                Elm.el
+                                                    [ Elm.htmlAttribute (Attr.style "font-size" "small") ]
+                                                <|
+                                                    Elm.text "削除"
+                                            }
+
+                                    else
+                                        Elm.none
+                  }
                 ]
             }
+        , Elm.column [ Elm.width Elm.fill ] <|
+            Maybe.withDefault [] <|
+                Maybe.map
+                    (\s ->
+                        [ Input.text []
+                            { onChange = Msg.CommentInput
+                            , text = model.game.commentInput
+                            , placeholder = Nothing
+                            , label = Input.labelHidden "comment"
+                            }
+                        , Input.button linkStyles
+                            { onPress =
+                                Just <|
+                                    Msg.ApiRequest <|
+                                        Msg.KifuPostComment model.game.step.boardId model.game.commentInput
+                            , label = Elm.text "post comment"
+                            }
+                        ]
+                    )
+                    model.login
         ]
-            ++ (if model.login then
-                    [ Input.text []
-                        { onChange = Msg.CommentInput
-                        , text = model.game.commentInput
-                        , placeholder = Nothing
-                        , label = Input.labelHidden "comment"
-                        }
-                    , Input.button linkStyles
-                        { onPress =
-                            Just <|
-                                Msg.ApiRequest <|
-                                    Msg.KifuPostComment model.game.step.boardId model.game.commentInput
-                        , label = Elm.text "post comment"
-                        }
-                    ]
-
-                else
-                    []
-               )
 
 
 sameSteps : Model -> Element Msg

@@ -25,7 +25,9 @@ main =
 
 
 type alias Flags =
-    Bool
+    Maybe
+        { accountId : String
+        }
 
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )

@@ -82,8 +82,9 @@ initKifu =
 
 type alias Comment =
     { id : String
-    , ownerId : String
+    , name : String
     , text : String
+    , owned : Bool
     }
 
 
@@ -117,5 +118,5 @@ type alias Model =
     , route : Route
     , game : Game
     , timeZone : ( Time.Zone, Time.ZoneName )
-    , login : Bool
+    , login : Maybe { accountId : String }
     }
