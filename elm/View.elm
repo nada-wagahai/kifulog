@@ -287,25 +287,30 @@ sameSteps model =
                 }
     in
     Elm.column [ Elm.paddingXY 10 30, Elm.spacing 5, Elm.alignTop ] <|
-        [ Elm.el [ Elm.paddingXY 0 5 ] (Elm.text "同一局面")
-        , Elm.table [ Elm.spacingXY 10 5 ]
-            { data = steps
-            , columns =
-                [ { header = Elm.none
-                  , width = Elm.shrink
-                  , view = stepLink
-                  }
-                , { header = Elm.none
-                  , width = Elm.shrink
-                  , view = \step -> Elm.text <| String.fromInt step.seq ++ "手"
-                  }
-                , { header = Elm.none
-                  , width = Elm.shrink
-                  , view = \step -> Elm.text <| posixToStr step.start model.timeZone
-                  }
-                ]
-            }
-        ]
+        Elm.el [ Elm.paddingXY 0 5 ] (Elm.text "同一局面")
+            :: (if List.isEmpty steps then
+                    [ Elm.text "なし" ]
+
+                else
+                    [ Elm.table [ Elm.spacingXY 10 5 ]
+                        { data = steps
+                        , columns =
+                            [ { header = Elm.none
+                              , width = Elm.shrink
+                              , view = stepLink
+                              }
+                            , { header = Elm.none
+                              , width = Elm.shrink
+                              , view = \step -> Elm.text <| String.fromInt step.seq ++ "手"
+                              }
+                            , { header = Elm.none
+                              , width = Elm.shrink
+                              , view = \step -> Elm.text <| posixToStr step.start model.timeZone
+                              }
+                            ]
+                        }
+                    ]
+               )
 
 
 boardView : Model -> Element Msg
