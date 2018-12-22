@@ -14822,7 +14822,8 @@ var author$project$View$commentsView = function (model) {
 				mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+						mdgriffith$elm_ui$Element$spacing(10)
 					]),
 				A2(
 					elm$core$Maybe$withDefault,

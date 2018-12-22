@@ -285,7 +285,7 @@ commentsView model =
                   }
                 ]
             }
-        , Elm.column [ Elm.width Elm.fill ] <|
+        , Elm.column [ Elm.width Elm.fill, Elm.spacing 10 ] <|
             Maybe.withDefault [] <|
                 Maybe.map
                     (\s ->
