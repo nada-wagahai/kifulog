@@ -58,28 +58,36 @@ class Server < Sinatra::Base
       !@session.nil?
     end
 
-    def player_map(kifus)
+    def player_map(kifus, ids)
       player_ids = kifus.map{|kifu|
         kifu.players.map {|p| p.name }
       }.flatten.uniq
       account_ids = @@index.search_accounts(player_ids)
-      accounts = @@db.batch_get_account(account_ids)
+      accounts = @@db.batch_get_account(account_ids + ids)
 
       @player_map = {}
       accounts.each do |account|
         @player_map[account.player_id] = account.name
+        @player_map[account.id] = account.name
       end
+      p @player_map
+      @player_map
     end
 
-    def mask(name)
-      @player_map.fetch(name) {|key| login? ? key : "*****" }
+    def mask(meta, name)
+      if !meta.nil? && name == "プレイヤー"
+        p meta
+        @player_map.fetch(meta.owner_id) {|key| login? ? key : "*****" }
+      else
+        @player_map.fetch(name) {|key| login? ? key : "*****" }
+      end
     end
 
     def title(kifu)
       date = kifu.start_time.strftime("%Y/%m/%d %R")
       players = "%s - %s" % [
-        kifu.first_players.map {|p| mask p.name}.join(", "),
-        kifu.second_players.map {|p| mask p.name}.join(", "),
+        kifu.first_players.map {|p| mask nil, p.name}.join(", "),
+        kifu.second_players.map {|p| mask nil, p.name}.join(", "),
       ]
       "%s %s" % [date, players]
     end
@@ -101,7 +109,7 @@ class Server < Sinatra::Base
       @recent_comments = []
     end
 
-    player_map(ks)
+    player_map(ks, [])
 
     erb :index
   end
@@ -112,10 +120,14 @@ class Server < Sinatra::Base
     kifu = @@db.get_kifu(params['kifu_id'])
     not_found if kifu.nil?
 
-    player_map([kifu])
+    m = @@db.batch_get_metadata(params['kifu_id'])[0]
+
+    player_map([kifu], [m.owner_id])
     kifu.players.map! do |player|
-      name = mask(player.name)
-      player.name = name
+      if kifu.game_name != "ぴよ将棋" || player.name == "プレイヤー"
+        name = mask(m, player.name)
+        player.name = name
+      end
       player
     end
 
@@ -173,12 +185,16 @@ class Server < Sinatra::Base
     }
 
     step_ids = @@index.search_step(board_id)
-    kifus = @@db.batch_get_kifu(step_ids.map {|s| s.kifu_id })
+    kifu_ids = step_ids.map {|s| s.kifu_id }
+    kifus = @@db.batch_get_kifu(kifu_ids)
+    metadata = @@db.batch_get_metadata(kifu_ids).map {|m|
+      [m.kifu_id, m]
+    }.to_h
 
-    player_map(kifus)
-    kifus.map! do |kifu|
+    player_map(kifus, [])
+    kifu_ids.zip(kifus).map! do |kifu_id, kifu|
       kifu.players.map! do |player|
-        name = mask(player.name)
+        name = mask(metadata[kifu_id], player.name)
         player.name = name
         player
       end
@@ -336,7 +352,7 @@ class Server < Sinatra::Base
       {id: id, kifu: kifu}
     }
 
-    player_map(ks)
+    player_map(ks, [])
 
     ids = @@index.search_comment(owner: @session.account_id)
     @comments = @@db.batch_get_comments(ids)
