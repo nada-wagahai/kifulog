@@ -117,4 +117,5 @@ type alias Model =
     , route : Route
     , game : Game
     , timeZone : ( Time.Zone, Time.ZoneName )
+    , login : Bool
     }

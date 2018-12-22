@@ -25,7 +25,7 @@ main =
 
 
 type alias Flags =
-    ()
+    Bool
 
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -39,6 +39,7 @@ init flags url key =
                 , route = Route.toRoute url
                 , game = Model.initGame
                 , timeZone = ( Time.utc, Time.Name "UTC" )
+                , login = flags
                 }
     in
     ( m1

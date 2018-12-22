@@ -198,10 +198,12 @@ class Server < Sinatra::Base
   end
 
   get '/kifu/:kifu_id' do
+    authorize!
     erb :scene
   end
 
   get '/kifu/:kifu_id/:seq' do
+    authorize!
 =begin
     authorize!
 

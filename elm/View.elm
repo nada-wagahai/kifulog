@@ -231,7 +231,7 @@ controlView model =
 
 commentsView : Model -> Element Msg
 commentsView model =
-    Elm.column [ Elm.spacing 20 ]
+    Elm.column [ Elm.spacing 20 ] <|
         [ Elm.table [ Elm.spacing 10, Elm.width <| Elm.px 600 ]
             { data = model.game.comments
             , columns =
@@ -245,20 +245,26 @@ commentsView model =
                   }
                 ]
             }
-        , Input.text []
-            { onChange = Msg.CommentInput
-            , text = model.game.commentInput
-            , placeholder = Nothing
-            , label = Input.labelHidden "comment"
-            }
-        , Input.button linkStyles
-            { onPress =
-                Just <|
-                    Msg.ApiRequest <|
-                        Msg.KifuPostComment model.game.step.boardId model.game.commentInput
-            , label = Elm.text "post comment"
-            }
         ]
+            ++ (if model.login then
+                    [ Input.text []
+                        { onChange = Msg.CommentInput
+                        , text = model.game.commentInput
+                        , placeholder = Nothing
+                        , label = Input.labelHidden "comment"
+                        }
+                    , Input.button linkStyles
+                        { onPress =
+                            Just <|
+                                Msg.ApiRequest <|
+                                    Msg.KifuPostComment model.game.step.boardId model.game.commentInput
+                        , label = Elm.text "post comment"
+                        }
+                    ]
+
+                else
+                    []
+               )
 
 
 sameSteps : Model -> Element Msg
