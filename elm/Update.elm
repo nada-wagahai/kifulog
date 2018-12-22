@@ -135,10 +135,6 @@ apiResponse model res result =
                             updateScene model (mkScene pieces) comments steps seq
 
                         Err err ->
-                            let
-                                a_ =
-                                    Debug.log "kifu json" err
-                            in
                             ( model, Cmd.none )
 
                 KifuGame kifuId seq ->
@@ -175,20 +171,12 @@ apiResponse model res result =
                                         }
 
                         Err err ->
-                            let
-                                a_ =
-                                    Debug.log "game json" err
-                            in
                             ( model, Cmd.none )
 
                 KifuPostComment _ _ ->
                     update (LinkClicked (Browser.Internal model.url)) model
 
         Err err ->
-            let
-                _ =
-                    Debug.log "http err" err
-            in
             ( model, Cmd.none )
 
 

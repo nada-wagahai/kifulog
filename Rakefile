@@ -14,3 +14,11 @@ task :proto do
     exit status.to_i if !status.success?
   end
 end
+
+task :elm do
+  cmd = ["elm", "make", "elm/Main.elm", "--output", "public/assets/kifu.js"]
+  puts "elm: " + cmd.join(" ")
+  out,status = Open3.capture2(*cmd)
+  puts "elm: " + out
+  exit status.to_i if !status.success?
+end
