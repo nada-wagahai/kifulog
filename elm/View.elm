@@ -281,24 +281,31 @@ sameSteps model =
                 ( fs, ss ) =
                     List.partition (\p -> p.order == KB.FIRST) step.players
             in
-            Elm.el [] <|
-                Elm.link []
-                    { url = "../" ++ step.kifuId ++ "/" ++ String.fromInt step.seq
-                    , label =
-                        Elm.text
-                            (playersToStr fs
-                                ++ " - "
-                                ++ playersToStr ss
-                                ++ " ("
-                                ++ String.fromInt step.seq
-                                ++ "手) "
-                                ++ posixToStr step.start model.timeZone
-                            )
-                    }
+            Elm.link [ Elm.htmlAttribute <| Attr.class "same_step" ]
+                { url = "../" ++ step.kifuId ++ "/" ++ String.fromInt step.seq
+                , label = Elm.text (playersToStr fs ++ " - " ++ playersToStr ss)
+                }
     in
     Elm.column [ Elm.paddingXY 10 30, Elm.spacing 5, Elm.alignTop ] <|
-        Elm.el [ Elm.paddingXY 0 5 ] (Elm.text "同一局面")
-            :: List.map stepLink steps
+        [ Elm.el [ Elm.paddingXY 0 5 ] (Elm.text "同一局面")
+        , Elm.table [ Elm.spacingXY 10 5 ]
+            { data = steps
+            , columns =
+                [ { header = Elm.none
+                  , width = Elm.shrink
+                  , view = stepLink
+                  }
+                , { header = Elm.none
+                  , width = Elm.shrink
+                  , view = \step -> Elm.text <| String.fromInt step.seq ++ "手"
+                  }
+                , { header = Elm.none
+                  , width = Elm.shrink
+                  , view = \step -> Elm.text <| posixToStr step.start model.timeZone
+                  }
+                ]
+            }
+        ]
 
 
 boardView : Model -> Element Msg
