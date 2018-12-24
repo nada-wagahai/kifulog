@@ -6576,7 +6576,6 @@ var elm$core$Basics$always = F2(
 	function (a, _n0) {
 		return a;
 	});
-var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$map = _Platform_map;
 var elm$core$Maybe$isJust = function (maybe) {
 	if (maybe.$ === 'Just') {
@@ -7147,16 +7146,9 @@ var author$project$Update$update = F2(
 							var kifuId = _n1.a;
 							var seq = _n1.b;
 							var boardId = A2(
-								elm$core$Debug$log,
-								'bd',
-								A2(
-									elm$core$Maybe$withDefault,
-									'',
-									A2(author$project$Update$get, seq, model.game.kifu.boardIds)));
-							var bds_ = A2(
-								elm$core$Debug$log,
-								'bds',
-								elm$core$List$length(model.game.kifu.boardIds));
+								elm$core$Maybe$withDefault,
+								'',
+								A2(author$project$Update$get, seq, model.game.kifu.boardIds));
 							if (_Utils_eq(m.game.kifu.kifuId, kifuId)) {
 								var $temp$msg = author$project$Update$ApiRequest(
 									A2(author$project$Update$KifuScene, boardId, seq)),
