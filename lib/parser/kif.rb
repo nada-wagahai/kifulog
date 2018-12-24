@@ -56,11 +56,11 @@ class Parser::Kif
   end
 
   def readheader
-    label, line = readline.split(SEP)
+    label, line = readline.split(SEP, 2)
     line
   end
 
-  DATE_FORMAT = /(\d+)年(\d+)月(\d+)日\((\S)\) (\d+):(\d+):(\d+)/
+  DATE_FORMAT = /(\d+)年(\d+)月(\d+)日\((\S)\) (\d+)[:：](\d+)[:：](\d+)/
   def readdate
     if readheader =~ DATE_FORMAT
       Time.local $1, $2, $3, $5, $6, $7
