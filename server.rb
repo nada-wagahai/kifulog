@@ -70,13 +70,11 @@ class Server < Sinatra::Base
         @player_map[account.player_id] = account.name
         @player_map[account.id] = account.name
       end
-      p @player_map
       @player_map
     end
 
     def mask(meta, name)
       if !meta.nil? && name == "プレイヤー"
-        p meta
         @player_map.fetch(meta.owner_id) {|key| login? ? key : "*****" }
       else
         @player_map.fetch(name) {|key| login? ? key : "*****" }
