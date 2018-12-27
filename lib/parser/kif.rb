@@ -11,7 +11,7 @@ class Parser::Kif
   end
 
   def parse!(input)
-    @lines = input.split($/)
+    @lines = input.split(/\R/)
 
     readline # header comment
     game_name = readheader
@@ -88,7 +88,7 @@ class Parser::Kif
 
     prev = prev_str.nil? ? nil : Kifu::Pos.new(x: prev_str[0].to_i, y: prev_str[1].to_i)
 
-    pos, piece, promoted, putted, finished = if step_str == "投了"
+    pos, piece, promoted, putted, finished = if step_str == "投了" || step_str == "詰み"
       [Kifu::Pos.new(x: 0, y: 0), 0, false, false, true]
     else
       m = PAT.match(step_str)

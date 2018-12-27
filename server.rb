@@ -384,7 +384,8 @@ class Server < Sinatra::Base
     kifu = nil
     begin
       kifu = parser.parse! input
-    rescue e
+    rescue => e
+      p e.backtrace
       halt 400, "Parse error"
     end
     boards = kifu.boards!
