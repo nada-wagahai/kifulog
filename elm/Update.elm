@@ -1,6 +1,7 @@
 module Update exposing (KifuRequest(..), Msg(..), update)
 
 import Browser
+import Browser.Dom as Dom
 import Browser.Navigation as Nav
 import Dict
 import Http
@@ -9,6 +10,7 @@ import Json.Encode as E
 import Kifu.Board as KB
 import Model exposing (Comment, Model, SameStep, Step)
 import Route
+import Task
 import Time
 import Update.Decoder as Decoder
 import Url
@@ -25,6 +27,7 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | KifuMsg KB.Msg
+    | StepsScrollResult (Result Dom.Error ())
     | ApiRequest KifuRequest
     | ApiResponse KifuRequest (Result Http.Error String)
     | SetZone ( Time.Zone, Time.ZoneName )
@@ -258,10 +261,19 @@ update msg model =
                                         ( kModel_, game.comments, game.sameSteps )
                                         game.boardCache
                             }
+
+                y =
+                    toFloat (game_.step.seq - 1) * 25
             in
             ( { model | game = game_ }
-            , Cmd.map KifuMsg kMsg
+            , Cmd.batch
+                [ Cmd.map KifuMsg kMsg
+                , Task.attempt StepsScrollResult (Dom.setViewportOf "steps-view" 0 y)
+                ]
             )
+
+        StepsScrollResult result ->
+            ( model, Cmd.none )
 
         ApiRequest req ->
             apiRequest model req

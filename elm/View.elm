@@ -2,11 +2,13 @@ module View exposing (view)
 
 import Browser
 import Element as Elm exposing (Attribute, Element)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Event
+import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
-import Html.Attributes as Attr
+import Html.Attributes as HtmlAttr
 import Html.Events as HtmlEvent
 import Kifu.Board as KB
 import Model exposing (Kifu, Model, Player, Step, Timestamp)
@@ -193,33 +195,47 @@ gameInfo tz game =
 
 stepsView : Model -> Int -> Kifu -> Element Msg
 stepsView model seq game =
-    Elm.el [] <|
-        Elm.html <|
-            Html.select
-                [ Attr.size 13, Attr.style "align-self" "fix-start", Attr.style "width" "128px" ]
-            <|
-                List.map
-                    (\step ->
-                        let
-                            url =
-                                model.url
+    Elm.column
+        [ Elm.width (Elm.px 140)
+        , Elm.height (Elm.px 300)
+        , Border.width 1
+        , Elm.scrollbarY
+        , Elm.htmlAttribute <| HtmlAttr.id "steps-view"
+        ]
+    <|
+        List.map
+            (\step ->
+                let
+                    url =
+                        model.url
 
-                            url_ =
-                                { url
-                                    | path =
-                                        url.path
-                                            ++ "/../"
-                                            ++ String.fromInt step.seq
-                                }
-                        in
-                        Html.option
-                            [ Attr.selected (seq == step.seq)
-                            , Attr.style "font-size" "larger"
-                            , HtmlEvent.onClick <| Msg.LinkClicked <| Browser.Internal url_
-                            ]
-                            [ Html.text <| String.fromInt step.seq ++ ": " ++ symbol step ]
-                    )
-                    game.steps
+                    url_ =
+                        { url
+                            | path =
+                                url.path
+                                    ++ "/../"
+                                    ++ String.fromInt step.seq
+                        }
+
+                    attrs =
+                        Font.size 15
+                            :: Elm.paddingXY 7 5
+                            :: Elm.width Elm.fill
+                            :: Event.onClick (Msg.LinkClicked <| Browser.Internal url_)
+                            :: (if step.seq == seq then
+                                    [ Background.color (Elm.rgb255 199 209 205) ]
+
+                                else
+                                    []
+                               )
+                in
+                Elm.el attrs <|
+                    Elm.text <|
+                        String.fromInt step.seq
+                            ++ ": "
+                            ++ symbol step
+            )
+            game.steps
 
 
 controlView : Model -> Element Msg
@@ -275,7 +291,7 @@ commentsView model =
                                             { onPress = Just <| Msg.ApiRequest (Msg.KifuDeleteComment c.id)
                                             , label =
                                                 Elm.el
-                                                    [ Elm.htmlAttribute (Attr.style "font-size" "small") ]
+                                                    [ Elm.htmlAttribute (HtmlAttr.style "font-size" "small") ]
                                                 <|
                                                     Elm.text "削除"
                                             }
@@ -322,7 +338,7 @@ sameSteps model =
                 ( fs, ss ) =
                     List.partition (\p -> p.order == KB.FIRST) step.players
             in
-            Elm.link [ Elm.htmlAttribute <| Attr.class "same_step" ]
+            Elm.link [ Elm.htmlAttribute <| HtmlAttr.class "same_step" ]
                 { url = "../" ++ step.kifuId ++ "/" ++ String.fromInt step.seq
                 , label = Elm.text (playersToStr fs ++ " - " ++ playersToStr ss)
                 }
@@ -364,8 +380,8 @@ boardView model =
             ]
         , stepView model.game.step
         , Input.multiline
-            [ Elm.htmlAttribute (Attr.readonly True)
-            , Elm.htmlAttribute (Attr.style "font-size" "small")
+            [ Elm.htmlAttribute (HtmlAttr.readonly True)
+            , Elm.htmlAttribute (HtmlAttr.style "font-size" "small")
             , Elm.height (Elm.px 100)
             ]
             { onChange = always Msg.NopMsg
@@ -412,4 +428,4 @@ view model =
 
 viewLink : List (Html.Attribute Msg) -> String -> Html Msg
 viewLink attrs path =
-    Html.li [] [ Html.a (Attr.href path :: attrs) [ Html.text path ] ]
+    Html.li [] [ Html.a (HtmlAttr.href path :: attrs) [ Html.text path ] ]

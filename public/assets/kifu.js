@@ -6019,6 +6019,9 @@ var author$project$Update$KifuScene = F2(
 var author$project$Update$LinkClicked = function (a) {
 	return {$: 'LinkClicked', a: a};
 };
+var author$project$Update$StepsScrollResult = function (a) {
+	return {$: 'StepsScrollResult', a: a};
+};
 var elm$core$Basics$composeL = F3(
 	function (g, f, x) {
 		return g(
@@ -6570,6 +6573,7 @@ var elm$url$Url$fromString = function (str) {
 		elm$url$Url$Https,
 		A2(elm$core$String$dropLeft, 8, str)) : elm$core$Maybe$Nothing);
 };
+var elm$browser$Browser$Dom$setViewportOf = _Browser_setViewportOf;
 var elm$browser$Browser$Navigation$load = _Browser_load;
 var elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var elm$core$Basics$always = F2(
@@ -6577,6 +6581,25 @@ var elm$core$Basics$always = F2(
 		return a;
 	});
 var elm$core$Platform$Cmd$map = _Platform_map;
+var elm$core$Task$onError = _Scheduler_onError;
+var elm$core$Task$attempt = F2(
+	function (resultToMessage, task) {
+		return elm$core$Task$command(
+			elm$core$Task$Perform(
+				A2(
+					elm$core$Task$onError,
+					A2(
+						elm$core$Basics$composeL,
+						A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
+						elm$core$Result$Err),
+					A2(
+						elm$core$Task$andThen,
+						A2(
+							elm$core$Basics$composeL,
+							A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
+							elm$core$Result$Ok),
+						task))));
+	});
 var elm$core$Maybe$isJust = function (maybe) {
 	if (maybe.$ === 'Just') {
 		return true;
@@ -7204,11 +7227,23 @@ var author$project$Update$update = F2(
 								});
 						}
 					}();
+					var y = (game_.step.seq - 1) * 25;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{game: game_}),
-						A2(elm$core$Platform$Cmd$map, author$project$Update$KifuMsg, kMsg));
+						elm$core$Platform$Cmd$batch(
+							_List_fromArray(
+								[
+									A2(elm$core$Platform$Cmd$map, author$project$Update$KifuMsg, kMsg),
+									A2(
+									elm$core$Task$attempt,
+									author$project$Update$StepsScrollResult,
+									A3(elm$browser$Browser$Dom$setViewportOf, 'steps-view', 0, y))
+								])));
+				case 'StepsScrollResult':
+					var result = msg.a;
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				case 'ApiRequest':
 					var req = msg.a;
 					return A2(author$project$Update$apiRequest, model, req);
@@ -13474,23 +13509,13 @@ var author$project$View$stepView = function (step) {
 				(!step.seq) ? '開始前' : (elm$core$String$fromInt(step.seq) + ('手 ' + (author$project$View$symbol(step) + (step.finished ? '' : ' まで')))))
 			]));
 };
-var elm$html$Html$option = _VirtualDom_node('option');
-var elm$html$Html$select = _VirtualDom_node('select');
-var elm$json$Json$Encode$bool = _Json_wrap;
-var elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$bool(bool));
+var elm$html$Html$Attributes$id = elm$html$Html$Attributes$stringProperty('id');
+var mdgriffith$elm_ui$Internal$Flag$overflow = mdgriffith$elm_ui$Internal$Flag$flag(20);
+var mdgriffith$elm_ui$Internal$Model$Class = F2(
+	function (a, b) {
+		return {$: 'Class', a: a, b: b};
 	});
-var elm$html$Html$Attributes$selected = elm$html$Html$Attributes$boolProperty('selected');
-var elm$html$Html$Attributes$size = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'size',
-		elm$core$String$fromInt(n));
-};
+var mdgriffith$elm_ui$Element$scrollbarY = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$overflow, mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -13508,49 +13533,65 @@ var elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		elm$json$Json$Decode$succeed(msg));
 };
-var mdgriffith$elm_ui$Internal$Model$unstyled = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Unstyled, elm$core$Basics$always);
-var mdgriffith$elm_ui$Element$html = mdgriffith$elm_ui$Internal$Model$unstyled;
+var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
 var author$project$View$stepsView = F3(
 	function (model, seq, game) {
 		return A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_Nil,
-			mdgriffith$elm_ui$Element$html(
-				A2(
-					elm$html$Html$select,
-					_List_fromArray(
-						[
-							elm$html$Html$Attributes$size(13),
-							A2(elm$html$Html$Attributes$style, 'align-self', 'fix-start'),
-							A2(elm$html$Html$Attributes$style, 'width', '128px')
-						]),
-					A2(
-						elm$core$List$map,
-						function (step) {
-							var url = model.url;
-							var url_ = _Utils_update(
-								url,
-								{
-									path: url.path + ('/../' + elm$core$String$fromInt(step.seq))
-								});
-							return A2(
-								elm$html$Html$option,
-								_List_fromArray(
-									[
-										elm$html$Html$Attributes$selected(
-										_Utils_eq(seq, step.seq)),
-										A2(elm$html$Html$Attributes$style, 'font-size', 'larger'),
-										elm$html$Html$Events$onClick(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(
+					mdgriffith$elm_ui$Element$px(140)),
+					mdgriffith$elm_ui$Element$height(
+					mdgriffith$elm_ui$Element$px(300)),
+					mdgriffith$elm_ui$Element$Border$width(1),
+					mdgriffith$elm_ui$Element$scrollbarY,
+					mdgriffith$elm_ui$Element$htmlAttribute(
+					elm$html$Html$Attributes$id('steps-view'))
+				]),
+			A2(
+				elm$core$List$map,
+				function (step) {
+					var url = model.url;
+					var url_ = _Utils_update(
+						url,
+						{
+							path: url.path + ('/../' + elm$core$String$fromInt(step.seq))
+						});
+					var attrs = A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$Font$size(15),
+						A2(
+							elm$core$List$cons,
+							A2(mdgriffith$elm_ui$Element$paddingXY, 7, 5),
+							A2(
+								elm$core$List$cons,
+								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Element$Events$onClick(
 										author$project$Update$LinkClicked(
-											elm$browser$Browser$Internal(url_)))
-									]),
-								_List_fromArray(
-									[
-										elm$html$Html$text(
-										elm$core$String$fromInt(step.seq) + (': ' + author$project$View$symbol(step)))
-									]));
-						},
-						game.steps))));
+											elm$browser$Browser$Internal(url_))),
+									_Utils_eq(step.seq, seq) ? _List_fromArray(
+										[
+											mdgriffith$elm_ui$Element$Background$color(
+											A3(mdgriffith$elm_ui$Element$rgb255, 199, 209, 205))
+										]) : _List_Nil))));
+					return A2(
+						mdgriffith$elm_ui$Element$el,
+						attrs,
+						mdgriffith$elm_ui$Element$text(
+							elm$core$String$fromInt(step.seq) + (': ' + author$project$View$symbol(step))));
+				},
+				game.steps));
+	});
+var elm$json$Json$Encode$bool = _Json_wrap;
+var elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$bool(bool));
 	});
 var elm$html$Html$Attributes$readonly = elm$html$Html$Attributes$boolProperty('readOnly');
 var mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
@@ -13855,10 +13896,6 @@ var mdgriffith$elm_ui$Element$Input$value = A2(elm$core$Basics$composeL, mdgriff
 var mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
 var mdgriffith$elm_ui$Element$Region$announce = mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$LivePolite);
 var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
-var mdgriffith$elm_ui$Internal$Model$Class = F2(
-	function (a, b) {
-		return {$: 'Class', a: a, b: b};
-	});
 var mdgriffith$elm_ui$Internal$Model$filter = function (attrs) {
 	return A3(
 		elm$core$List$foldr,
@@ -13954,6 +13991,7 @@ var mdgriffith$elm_ui$Internal$Model$isContent = function (len) {
 		}
 	}
 };
+var mdgriffith$elm_ui$Internal$Model$unstyled = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Unstyled, elm$core$Basics$always);
 var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 	function (textInput, attrs, textOptions) {
 		var forNearby = function (attr) {
@@ -14642,7 +14680,6 @@ var elm$html$Html$Attributes$tabindex = function (n) {
 		elm$core$String$fromInt(n));
 };
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
 var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
 var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
 	return {$: 'MayPreventDefault', a: a};
