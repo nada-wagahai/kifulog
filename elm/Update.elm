@@ -17,7 +17,8 @@ import Url
 
 
 type KifuRequest
-    = KifuScene String Int
+    = KifuIndex
+    | KifuScene String Int
     | KifuGame String Int
     | KifuPostComment String String
     | KifuDeleteComment String
@@ -76,6 +77,14 @@ updateScene model sceneF comments steps seq =
 apiRequest : Model -> KifuRequest -> ( Model, Cmd Msg )
 apiRequest model req =
     case req of
+        KifuIndex ->
+            ( model
+            , Http.get
+                { url = "/api/index"
+                , expect = Http.expectString (ApiResponse req)
+                }
+            )
+
         KifuScene boardId seq ->
             case Dict.get boardId model.game.boardCache of
                 Nothing ->
@@ -151,6 +160,14 @@ apiResponse model res result =
     case result of
         Ok text ->
             case res of
+                KifuIndex ->
+                    case D.decodeString Decoder.index text of
+                        Ok index ->
+                            ( { model | index = index }, Cmd.none )
+
+                        Err err ->
+                            ( model, Cmd.none )
+
                 KifuScene _ seq ->
                     case D.decodeString Decoder.board text of
                         Ok ( pieces, comments, steps ) ->
@@ -222,6 +239,9 @@ update msg model =
                     { model | route = Route.toRoute url }
             in
             case m.route of
+                Route.Index ->
+                    update (ApiRequest KifuIndex) m
+
                 Route.Kifu kifuId seq ->
                     let
                         boardId =

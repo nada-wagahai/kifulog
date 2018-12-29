@@ -39,6 +39,7 @@ init flags url key =
                 , key = key
                 , url = url
                 , route = Route.toRoute url
+                , index = { entries = [], recentComments = [] }
                 , game = Model.initGame
                 , timeZone = ( Time.utc, Time.Name "UTC" )
                 , login = flags

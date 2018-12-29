@@ -1,13 +1,14 @@
 module Update.Decoder exposing
     ( board
     , comments
+    , index
     , kifu
     , pieces
     )
 
 import Json.Decode as D
 import Kifu.Board as KB
-import Model exposing (Comment, Kifu, Player, SameStep, Step)
+import Model exposing (Comment, Index, Kifu, Player, SameStep, Step)
 import Time
 
 
@@ -119,3 +120,15 @@ board =
         (D.field "board" <| pieces "pieces")
         (D.field "comments" comments)
         (D.field "steps" sameSteps)
+
+
+index : D.Decoder Index
+index =
+    D.map2 Index
+        (D.field "entries" <|
+            D.list <|
+                D.map2 (\id k -> { k | kifuId = id })
+                    (D.field "id" D.string)
+                    (D.field "kifu" (kifu ""))
+        )
+        (D.field "recentComments" comments)

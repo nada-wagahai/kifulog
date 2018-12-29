@@ -23,10 +23,20 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     repeated :comments, :message, 2, "api.Comment"
     repeated :steps, :message, 3, "api.Step"
   end
+  add_message "api.IndexResponse" do
+    repeated :entries, :message, 1, "api.IndexResponse.Entry"
+    repeated :recent_comments, :message, 2, "api.Comment"
+  end
+  add_message "api.IndexResponse.Entry" do
+    optional :id, :string, 1
+    optional :kifu, :message, 2, "kifu.Kifu"
+  end
 end
 
 module Api
   Step = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.Step").msgclass
   Comment = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.Comment").msgclass
   BoardResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.BoardResponse").msgclass
+  IndexResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.IndexResponse").msgclass
+  IndexResponse::Entry = Google::Protobuf::DescriptorPool.generated_pool.lookup("api.IndexResponse.Entry").msgclass
 end

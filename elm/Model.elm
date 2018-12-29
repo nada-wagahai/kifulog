@@ -1,6 +1,7 @@
 module Model exposing
     ( Comment
     , Game
+    , Index
     , Kifu
     , Model
     , Player
@@ -114,11 +115,18 @@ initGame =
     }
 
 
+type alias Index =
+    { entries : List Kifu
+    , recentComments : List Comment
+    }
+
+
 type alias Model =
     { count : Int
     , key : Nav.Key
     , url : Url.Url
     , route : Route
+    , index : Index
     , game : Game
     , timeZone : ( Time.Zone, Time.ZoneName )
     , login : Maybe { accountId : String }

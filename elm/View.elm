@@ -33,8 +33,9 @@ header model =
             Url.toString { url | path = url.path ++ "/../../.." }
     in
     Elm.row [ Elm.padding 5 ]
-        -- [ Elm.link linkStyles { url = url_, label = Elm.text "棋譜一覧" }
-        [ Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "../..") :: linkStyles) <| Elm.text "棋譜一覧"
+        [ Elm.link linkStyles { url = url_, label = Elm.text "棋譜一覧" }
+
+        -- [ Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "../..") :: linkStyles) <| Elm.text "棋譜一覧"
         ]
 
 
@@ -282,6 +283,11 @@ controlView model =
             ]
 
 
+ifLogin : Model -> Element msg -> Element msg
+ifLogin model elm =
+    Maybe.withDefault Elm.none <| Maybe.map (\_ -> elm) model.login
+
+
 commentsView : Model -> Element Msg
 commentsView model =
     Elm.column [ Elm.spacing 20 ] <|
@@ -300,46 +306,38 @@ commentsView model =
                   , width = Elm.shrink
                   , view =
                         \c ->
-                            case model.login of
-                                Nothing ->
+                            ifLogin model <|
+                                if c.owned then
+                                    Input.button linkStyles
+                                        { onPress = Just <| Msg.ApiRequest (Msg.KifuDeleteComment c.id)
+                                        , label =
+                                            Elm.el
+                                                [ Elm.htmlAttribute (HtmlAttr.style "font-size" "small") ]
+                                            <|
+                                                Elm.text "削除"
+                                        }
+
+                                else
                                     Elm.none
-
-                                Just s ->
-                                    if c.owned then
-                                        Input.button linkStyles
-                                            { onPress = Just <| Msg.ApiRequest (Msg.KifuDeleteComment c.id)
-                                            , label =
-                                                Elm.el
-                                                    [ Elm.htmlAttribute (HtmlAttr.style "font-size" "small") ]
-                                                <|
-                                                    Elm.text "削除"
-                                            }
-
-                                    else
-                                        Elm.none
                   }
                 ]
             }
-        , Elm.column [ Elm.width Elm.fill, Elm.spacing 10 ] <|
-            Maybe.withDefault [] <|
-                Maybe.map
-                    (\s ->
-                        [ Input.text []
-                            { onChange = Msg.CommentInput
-                            , text = model.game.commentInput
-                            , placeholder = Nothing
-                            , label = Input.labelHidden "comment"
-                            }
-                        , Input.button linkStyles
-                            { onPress =
-                                Just <|
-                                    Msg.ApiRequest <|
-                                        Msg.KifuPostComment model.game.step.boardId model.game.commentInput
-                            , label = Elm.text "post comment"
-                            }
-                        ]
-                    )
-                    model.login
+        , ifLogin model <|
+            Elm.column [ Elm.width Elm.fill, Elm.spacing 10 ]
+                [ Input.text []
+                    { onChange = Msg.CommentInput
+                    , text = model.game.commentInput
+                    , placeholder = Nothing
+                    , label = Input.labelHidden "comment"
+                    }
+                , Input.button linkStyles
+                    { onPress =
+                        Just <|
+                            Msg.ApiRequest <|
+                                Msg.KifuPostComment model.game.step.boardId model.game.commentInput
+                    , label = Elm.text "post comment"
+                    }
+                ]
         ]
 
 
@@ -358,7 +356,7 @@ sameSteps model =
                 ( fs, ss ) =
                     List.partition (\p -> p.order == KB.FIRST) step.players
             in
-            Elm.link [ Elm.htmlAttribute <| HtmlAttr.class "same_step" ]
+            Elm.link [ Elm.htmlAttribute <| HtmlAttr.class "list_star" ]
                 { url = "../" ++ step.kifuId ++ "/" ++ String.fromInt step.seq
                 , label = Elm.text (playersToStr fs ++ " - " ++ playersToStr ss)
                 }
@@ -426,6 +424,49 @@ content model =
                 , commentsView model
                 ]
 
+        Route.Index ->
+            Elm.column [ Elm.spacing 20 ]
+                [ Elm.row []
+                    [ Elm.table [ Elm.spacing 5 ]
+                        { data = model.index.entries
+                        , columns =
+                            [ { header = Elm.none
+                              , width = Elm.shrink
+                              , view =
+                                    \kifu ->
+                                        let
+                                            ( fs, ss ) =
+                                                List.partition (\p -> p.order == KB.FIRST) kifu.players
+                                        in
+                                        Elm.link [ Elm.htmlAttribute <| HtmlAttr.class "list_star" ]
+                                            { url = "kifu/" ++ kifu.kifuId ++ "/0"
+                                            , label =
+                                                Elm.text (playersToStr fs ++ " - " ++ playersToStr ss)
+                                            }
+                              }
+                            , { header = Elm.none
+                              , width = Elm.shrink
+                              , view = \kifu -> Elm.text <| posixToStr kifu.timestamp.start model.timeZone
+                              }
+                            ]
+                        }
+
+                    -- , ifLogin model <|
+                    --     Elm.column []
+                    --         [ Elm.text "最近のコメント"
+                    --         ]
+                    ]
+                , Elm.row [ Elm.spacing 15 ]
+                    [ case model.login of
+                        Nothing ->
+                            Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "login") :: linkStyles) <| Elm.text "login"
+
+                        Just _ ->
+                            Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "logout") :: linkStyles) <| Elm.text "logout"
+                    , Elm.el (Event.onClick (Msg.LinkClicked <| Browser.External "admin") :: linkStyles) <| Elm.text "admin"
+                    ]
+                ]
+
         _ ->
             Elm.text "NotFound"
 
@@ -433,7 +474,7 @@ content model =
 body : Model -> Html Msg
 body model =
     Elm.layout [] <|
-        Elm.column [ Elm.padding 20 ]
+        Elm.column [ Elm.padding 20, Elm.spacing 15 ]
             [ header model
             , content model
             ]
@@ -444,8 +485,3 @@ view model =
     { title = "棋譜ログ"
     , body = [ body model ]
     }
-
-
-viewLink : List (Html.Attribute Msg) -> String -> Html Msg
-viewLink attrs path =
-    Html.li [] [ Html.a (HtmlAttr.href path :: attrs) [ Html.text path ] ]

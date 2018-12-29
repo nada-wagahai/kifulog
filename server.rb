@@ -93,10 +93,17 @@ class Server < Sinatra::Base
 
   get '/' do
     authorize!
+    erb :scene
+  end
+
+  get '/api/index' do
+    authorize!
 
     ids = @@index.search_kifu()
     ks = @@db.batch_get_kifu(ids)
     @index = ids.zip(ks).map { |id, kifu|
+      kifu.steps.clear
+      kifu.board_ids.clear
       {id: id, kifu: kifu}
     }
 
@@ -107,9 +114,36 @@ class Server < Sinatra::Base
       @recent_comments = []
     end
 
-    player_map(ks, [])
+    ms = @@db.batch_get_metadata(ids)
+    metas = ms.map {|m| [m.kifu_id, m] }.to_h
+    moids = ms.map {|m| m.owner_id }
 
-    erb :index
+    player_map(ks, moids)
+
+    @index.each {|k|
+      k[:kifu].players.map! do |player|
+        if k[:kifu].game_name != "ぴよ将棋" || player.name == "プレイヤー"
+          name = mask(metas[k[:id]], player.name)
+          player.name = name
+        end
+        player
+      end
+    }
+
+    comment_oids = @recent_comments.select{|c|!c.nil?}.map {|c| c.owner_id }
+    owner_map = @@db.batch_get_account(comment_oids).map {|a| [a.id, a.name]}.to_h
+
+    Api::IndexResponse.new(
+      entries: @index,
+      recent_comments: @recent_comments.map! {|comment|
+        Api::Comment.new(
+          id: comment.id,
+          name: owner_map[comment.owner_id],
+          text: comment.text,
+          owned: !@session.nil? && comment.owner_id == @session.account_id,
+        )
+      },
+    ).to_json
   end
 
   get '/api/kifu/:kifu_id' do

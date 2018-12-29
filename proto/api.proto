@@ -24,3 +24,12 @@ message BoardResponse {
   repeated Comment comments = 2;
   repeated Step steps = 3;
 }
+
+message IndexResponse {
+  message Entry {
+    string id = 1;
+	kifu.Kifu kifu = 2;
+  }
+  repeated Entry entries = 1;
+  repeated Comment recent_comments = 2;
+}

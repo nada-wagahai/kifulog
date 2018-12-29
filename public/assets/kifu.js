@@ -6009,6 +6009,7 @@ var author$project$Update$KifuGame = F2(
 	function (a, b) {
 		return {$: 'KifuGame', a: a, b: b};
 	});
+var author$project$Update$KifuIndex = {$: 'KifuIndex'};
 var author$project$Update$KifuMsg = function (a) {
 	return {$: 'KifuMsg', a: a};
 };
@@ -6280,6 +6281,10 @@ var author$project$Update$Decoder$board = A4(
 		author$project$Update$Decoder$pieces('pieces')),
 	A2(elm$json$Json$Decode$field, 'comments', author$project$Update$Decoder$comments),
 	A2(elm$json$Json$Decode$field, 'steps', author$project$Update$Decoder$sameSteps));
+var author$project$Model$Index = F2(
+	function (entries, recentComments) {
+		return {entries: entries, recentComments: recentComments};
+	});
 var elm$json$Json$Decode$map7 = _Json_map7;
 var author$project$Update$Decoder$step = A8(
 	elm$json$Json$Decode$map7,
@@ -6341,6 +6346,27 @@ var author$project$Update$Decoder$kifu = function (kifuId) {
 			'boardIds',
 			elm$json$Json$Decode$list(elm$json$Json$Decode$string)));
 };
+var author$project$Update$Decoder$index = A3(
+	elm$json$Json$Decode$map2,
+	author$project$Model$Index,
+	A2(
+		elm$json$Json$Decode$field,
+		'entries',
+		elm$json$Json$Decode$list(
+			A3(
+				elm$json$Json$Decode$map2,
+				F2(
+					function (id, k) {
+						return _Utils_update(
+							k,
+							{kifuId: id});
+					}),
+				A2(elm$json$Json$Decode$field, 'id', elm$json$Json$Decode$string),
+				A2(
+					elm$json$Json$Decode$field,
+					'kifu',
+					author$project$Update$Decoder$kifu(''))))),
+	A2(elm$json$Json$Decode$field, 'recentComments', author$project$Update$Decoder$comments));
 var elm$browser$Browser$Internal = function (a) {
 	return {$: 'Internal', a: a};
 };
@@ -6953,11 +6979,20 @@ var elm$url$Url$toString = function (url) {
 var author$project$Update$apiRequest = F2(
 	function (model, req) {
 		switch (req.$) {
+			case 'KifuIndex':
+				return _Utils_Tuple2(
+					model,
+					elm$http$Http$get(
+						{
+							expect: elm$http$Http$expectString(
+								author$project$Update$ApiResponse(req)),
+							url: '/api/index'
+						}));
 			case 'KifuScene':
 				var boardId = req.a;
 				var seq = req.b;
-				var _n12 = A2(elm$core$Dict$get, boardId, model.game.boardCache);
-				if (_n12.$ === 'Nothing') {
+				var _n13 = A2(elm$core$Dict$get, boardId, model.game.boardCache);
+				if (_n13.$ === 'Nothing') {
 					return _Utils_Tuple2(
 						model,
 						elm$http$Http$get(
@@ -6967,10 +7002,10 @@ var author$project$Update$apiRequest = F2(
 								url: '/api/board/' + boardId
 							}));
 				} else {
-					var _n13 = _n12.a;
-					var board = _n13.a;
-					var comments = _n13.b;
-					var steps = _n13.c;
+					var _n14 = _n13.a;
+					var board = _n14.a;
+					var comments = _n14.b;
+					var steps = _n14.c;
 					return A5(
 						author$project$Update$updateScene,
 						model,
@@ -7052,14 +7087,27 @@ var author$project$Update$apiResponse = F3(
 		if (result.$ === 'Ok') {
 			var text = result.a;
 			switch (res.$) {
+				case 'KifuIndex':
+					var _n6 = A2(elm$json$Json$Decode$decodeString, author$project$Update$Decoder$index, text);
+					if (_n6.$ === 'Ok') {
+						var index = _n6.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{index: index}),
+							elm$core$Platform$Cmd$none);
+					} else {
+						var err = _n6.a;
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+					}
 				case 'KifuScene':
 					var seq = res.b;
-					var _n6 = A2(elm$json$Json$Decode$decodeString, author$project$Update$Decoder$board, text);
-					if (_n6.$ === 'Ok') {
-						var _n7 = _n6.a;
-						var pieces = _n7.a;
-						var comments = _n7.b;
-						var steps = _n7.c;
+					var _n7 = A2(elm$json$Json$Decode$decodeString, author$project$Update$Decoder$board, text);
+					if (_n7.$ === 'Ok') {
+						var _n8 = _n7.a;
+						var pieces = _n8.a;
+						var comments = _n8.b;
+						var steps = _n8.c;
 						return A5(
 							author$project$Update$updateScene,
 							model,
@@ -7068,31 +7116,31 @@ var author$project$Update$apiResponse = F3(
 							steps,
 							seq);
 					} else {
-						var err = _n6.a;
+						var err = _n7.a;
 						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 					}
 				case 'KifuGame':
 					var kifuId = res.a;
 					var seq = res.b;
-					var _n8 = A2(
+					var _n9 = A2(
 						elm$json$Json$Decode$decodeString,
 						author$project$Update$Decoder$kifu(kifuId),
 						text);
-					if (_n8.$ === 'Ok') {
-						var kifu = _n8.a;
-						var _n9 = A2(author$project$Update$get, seq, kifu.boardIds);
-						if (_n9.$ === 'Nothing') {
+					if (_n9.$ === 'Ok') {
+						var kifu = _n9.a;
+						var _n10 = A2(author$project$Update$get, seq, kifu.boardIds);
+						if (_n10.$ === 'Nothing') {
 							return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 						} else {
-							var boardId = _n9.a;
+							var boardId = _n10.a;
 							var steps = A2(
 								elm$core$List$map,
 								function (step) {
-									var _n10 = A2(author$project$Update$get, step.seq, kifu.boardIds);
-									if (_n10.$ === 'Nothing') {
+									var _n11 = A2(author$project$Update$get, step.seq, kifu.boardIds);
+									if (_n11.$ === 'Nothing') {
 										return step;
 									} else {
-										var bid = _n10.a;
+										var bid = _n11.a;
 										return _Utils_update(
 											step,
 											{boardId: bid});
@@ -7118,7 +7166,7 @@ var author$project$Update$apiResponse = F3(
 									}));
 						}
 					} else {
-						var err = _n8.a;
+						var err = _n9.a;
 						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 					}
 				case 'KifuPostComment':
@@ -7170,6 +7218,12 @@ var author$project$Update$update = F2(
 						});
 					var _n1 = m.route;
 					switch (_n1.$) {
+						case 'Index':
+							var $temp$msg = author$project$Update$ApiRequest(author$project$Update$KifuIndex),
+								$temp$model = m;
+							msg = $temp$msg;
+							model = $temp$model;
+							continue update;
 						case 'Kifu':
 							var kifuId = _n1.a;
 							var seq = _n1.b;
@@ -7326,6 +7380,7 @@ var author$project$Main$init = F3(
 			{
 				count: 0,
 				game: author$project$Model$initGame,
+				index: {entries: _List_Nil, recentComments: _List_Nil},
 				key: key,
 				login: flags,
 				route: author$project$Route$toRoute(url),
@@ -14435,6 +14490,19 @@ var author$project$Update$KifuPostComment = F2(
 	function (a, b) {
 		return {$: 'KifuPostComment', a: a, b: b};
 	});
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var author$project$View$ifLogin = F2(
+	function (model, elm) {
+		return A2(
+			elm$core$Maybe$withDefault,
+			mdgriffith$elm_ui$Element$none,
+			A2(
+				elm$core$Maybe$map,
+				function (_n0) {
+					return elm;
+				},
+				model.login));
+	});
 var author$project$View$linkStyles = _List_fromArray(
 	[
 		mdgriffith$elm_ui$Element$padding(2),
@@ -14449,7 +14517,6 @@ var mdgriffith$elm_ui$Element$maximum = F2(
 	function (i, l) {
 		return A2(mdgriffith$elm_ui$Internal$Model$Max, i, l);
 	});
-var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
 var mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
 var mdgriffith$elm_ui$Element$paragraph = F2(
 	function (attrs, children) {
@@ -14848,12 +14915,10 @@ var author$project$View$commentsView = function (model) {
 							{
 							header: mdgriffith$elm_ui$Element$none,
 							view: function (c) {
-								var _n0 = model.login;
-								if (_n0.$ === 'Nothing') {
-									return mdgriffith$elm_ui$Element$none;
-								} else {
-									var s = _n0.a;
-									return c.owned ? A2(
+								return A2(
+									author$project$View$ifLogin,
+									model,
+									c.owned ? A2(
 										mdgriffith$elm_ui$Element$Input$button,
 										author$project$View$linkStyles,
 										{
@@ -14868,8 +14933,7 @@ var author$project$View$commentsView = function (model) {
 											onPress: elm$core$Maybe$Just(
 												author$project$Update$ApiRequest(
 													author$project$Update$KifuDeleteComment(c.id)))
-										}) : mdgriffith$elm_ui$Element$none;
-								}
+										}) : mdgriffith$elm_ui$Element$none);
 							},
 							width: mdgriffith$elm_ui$Element$shrink
 						}
@@ -14877,41 +14941,36 @@ var author$project$View$commentsView = function (model) {
 					data: model.game.comments
 				}),
 				A2(
-				mdgriffith$elm_ui$Element$column,
-				_List_fromArray(
-					[
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-						mdgriffith$elm_ui$Element$spacing(10)
-					]),
+				author$project$View$ifLogin,
+				model,
 				A2(
-					elm$core$Maybe$withDefault,
-					_List_Nil,
-					A2(
-						elm$core$Maybe$map,
-						function (s) {
-							return _List_fromArray(
-								[
-									A2(
-									mdgriffith$elm_ui$Element$Input$text,
-									_List_Nil,
-									{
-										label: mdgriffith$elm_ui$Element$Input$labelHidden('comment'),
-										onChange: author$project$Update$CommentInput,
-										placeholder: elm$core$Maybe$Nothing,
-										text: model.game.commentInput
-									}),
-									A2(
-									mdgriffith$elm_ui$Element$Input$button,
-									author$project$View$linkStyles,
-									{
-										label: mdgriffith$elm_ui$Element$text('post comment'),
-										onPress: elm$core$Maybe$Just(
-											author$project$Update$ApiRequest(
-												A2(author$project$Update$KifuPostComment, model.game.step.boardId, model.game.commentInput)))
-									})
-								]);
-						},
-						model.login)))
+					mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$spacing(10)
+						]),
+					_List_fromArray(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$Input$text,
+							_List_Nil,
+							{
+								label: mdgriffith$elm_ui$Element$Input$labelHidden('comment'),
+								onChange: author$project$Update$CommentInput,
+								placeholder: elm$core$Maybe$Nothing,
+								text: model.game.commentInput
+							}),
+							A2(
+							mdgriffith$elm_ui$Element$Input$button,
+							author$project$View$linkStyles,
+							{
+								label: mdgriffith$elm_ui$Element$text('post comment'),
+								onPress: elm$core$Maybe$Just(
+									author$project$Update$ApiRequest(
+										A2(author$project$Update$KifuPostComment, model.game.step.boardId, model.game.commentInput)))
+							})
+						])))
 			]));
 };
 var mdgriffith$elm_ui$Element$spacingXY = F2(
@@ -14940,7 +14999,7 @@ var author$project$View$sameSteps = function (model) {
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$htmlAttribute(
-					elm$html$Html$Attributes$class('same_step'))
+					elm$html$Html$Attributes$class('list_star'))
 				]),
 			{
 				label: mdgriffith$elm_ui$Element$text(
@@ -15010,29 +15069,134 @@ var author$project$View$sameSteps = function (model) {
 };
 var author$project$View$content = function (model) {
 	var _n0 = model.route;
-	if (_n0.$ === 'Kifu') {
-		var kifuId = _n0.a;
-		var seq = _n0.b;
-		return A2(
-			mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$spacing(20)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$row,
-					_List_Nil,
-					_List_fromArray(
-						[
-							author$project$View$boardView(model),
-							author$project$View$sameSteps(model)
-						])),
-					author$project$View$commentsView(model)
-				]));
-	} else {
-		return mdgriffith$elm_ui$Element$text('NotFound');
+	switch (_n0.$) {
+		case 'Kifu':
+			var kifuId = _n0.a;
+			var seq = _n0.b;
+			return A2(
+				mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(20)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$row,
+						_List_Nil,
+						_List_fromArray(
+							[
+								author$project$View$boardView(model),
+								author$project$View$sameSteps(model)
+							])),
+						author$project$View$commentsView(model)
+					]));
+		case 'Index':
+			return A2(
+				mdgriffith$elm_ui$Element$column,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(20)
+					]),
+				_List_fromArray(
+					[
+						A2(
+						mdgriffith$elm_ui$Element$row,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								mdgriffith$elm_ui$Element$table,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$spacing(5)
+									]),
+								{
+									columns: _List_fromArray(
+										[
+											{
+											header: mdgriffith$elm_ui$Element$none,
+											view: function (kifu) {
+												var _n1 = A2(
+													elm$core$List$partition,
+													function (p) {
+														return _Utils_eq(p.order, author$project$Kifu$Board$FIRST);
+													},
+													kifu.players);
+												var fs = _n1.a;
+												var ss = _n1.b;
+												return A2(
+													mdgriffith$elm_ui$Element$link,
+													_List_fromArray(
+														[
+															mdgriffith$elm_ui$Element$htmlAttribute(
+															elm$html$Html$Attributes$class('list_star'))
+														]),
+													{
+														label: mdgriffith$elm_ui$Element$text(
+															author$project$View$playersToStr(fs) + (' - ' + author$project$View$playersToStr(ss))),
+														url: 'kifu/' + (kifu.kifuId + '/0')
+													});
+											},
+											width: mdgriffith$elm_ui$Element$shrink
+										},
+											{
+											header: mdgriffith$elm_ui$Element$none,
+											view: function (kifu) {
+												return mdgriffith$elm_ui$Element$text(
+													A2(author$project$View$posixToStr, kifu.timestamp.start, model.timeZone));
+											},
+											width: mdgriffith$elm_ui$Element$shrink
+										}
+										]),
+									data: model.index.entries
+								})
+							])),
+						A2(
+						mdgriffith$elm_ui$Element$row,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$spacing(15)
+							]),
+						_List_fromArray(
+							[
+								function () {
+								var _n2 = model.login;
+								if (_n2.$ === 'Nothing') {
+									return A2(
+										mdgriffith$elm_ui$Element$el,
+										A2(
+											elm$core$List$cons,
+											mdgriffith$elm_ui$Element$Events$onClick(
+												author$project$Update$LinkClicked(
+													elm$browser$Browser$External('login'))),
+											author$project$View$linkStyles),
+										mdgriffith$elm_ui$Element$text('login'));
+								} else {
+									return A2(
+										mdgriffith$elm_ui$Element$el,
+										A2(
+											elm$core$List$cons,
+											mdgriffith$elm_ui$Element$Events$onClick(
+												author$project$Update$LinkClicked(
+													elm$browser$Browser$External('logout'))),
+											author$project$View$linkStyles),
+										mdgriffith$elm_ui$Element$text('logout'));
+								}
+							}(),
+								A2(
+								mdgriffith$elm_ui$Element$el,
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Element$Events$onClick(
+										author$project$Update$LinkClicked(
+											elm$browser$Browser$External('admin'))),
+									author$project$View$linkStyles),
+								mdgriffith$elm_ui$Element$text('admin'))
+							]))
+					]));
+		default:
+			return mdgriffith$elm_ui$Element$text('NotFound');
 	}
 };
 var author$project$View$header = function (model) {
@@ -15050,14 +15214,12 @@ var author$project$View$header = function (model) {
 		_List_fromArray(
 			[
 				A2(
-				mdgriffith$elm_ui$Element$el,
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$Events$onClick(
-						author$project$Update$LinkClicked(
-							elm$browser$Browser$External('../..'))),
-					author$project$View$linkStyles),
-				mdgriffith$elm_ui$Element$text('棋譜一覧'))
+				mdgriffith$elm_ui$Element$link,
+				author$project$View$linkStyles,
+				{
+					label: mdgriffith$elm_ui$Element$text('棋譜一覧'),
+					url: url_
+				})
 			]));
 };
 var mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
@@ -15320,7 +15482,8 @@ var author$project$View$body = function (model) {
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$padding(20)
+					mdgriffith$elm_ui$Element$padding(20),
+					mdgriffith$elm_ui$Element$spacing(15)
 				]),
 			_List_fromArray(
 				[
