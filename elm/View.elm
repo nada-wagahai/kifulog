@@ -77,10 +77,21 @@ symbol step =
             )
             (Maybe.map
                 (\c ->
+                    let
+                        notPromoted =
+                            not c.putted
+                                && not (List.member c.piece [ KB.GYOKU, KB.KIN, KB.RYU, KB.UMA, KB.NARI_GIN, KB.NARI_KEI, KB.NARI_KYOU, KB.TO ])
+                                && ((step.player == KB.FIRST && c.pos.y <= 3)
+                                        || (step.player == KB.SECOND && c.pos.y >= 7)
+                                   )
+                    in
                     KB.posToString c.pos
                         ++ KB.pieceText c.piece
                         ++ (if c.promoted then
                                 "成"
+
+                            else if notPromoted then
+                                "不成"
 
                             else
                                 ""

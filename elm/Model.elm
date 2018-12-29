@@ -26,6 +26,7 @@ type alias Step =
         Maybe
             { pos : KB.Pos
             , piece : KB.PieceType
+            , putted : Bool
             , promoted : Bool
             }
     , player : KB.Player

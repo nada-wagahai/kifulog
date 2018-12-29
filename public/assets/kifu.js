@@ -6284,13 +6284,13 @@ var author$project$Update$Decoder$step = A8(
 	author$project$Model$Step,
 	A2(elm$json$Json$Decode$field, 'seq', elm$json$Json$Decode$int),
 	elm$json$Json$Decode$succeed(''),
-	A4(
-		elm$json$Json$Decode$map3,
-		F2(
-			function (pi, pr) {
+	A5(
+		elm$json$Json$Decode$map4,
+		F3(
+			function (pi, pr, pt) {
 				return elm$core$Maybe$map(
 					function (p) {
-						return {piece: pi, pos: p, promoted: pr};
+						return {piece: pi, pos: p, promoted: pr, putted: pt};
 					});
 			}),
 		A2(
@@ -6298,6 +6298,7 @@ var author$project$Update$Decoder$step = A8(
 			author$project$Kifu$Board$pieceFromString,
 			A3(author$project$Update$Decoder$fieldDefault, 'piece', 'NULL', elm$json$Json$Decode$string)),
 		A3(author$project$Update$Decoder$fieldDefault, 'promoted', false, elm$json$Json$Decode$bool),
+		A3(author$project$Update$Decoder$fieldDefault, 'putted', false, elm$json$Json$Decode$bool),
 		author$project$Update$Decoder$pos('pos')),
 	author$project$Update$Decoder$order('player'),
 	author$project$Update$Decoder$pos('prev'),
@@ -13484,6 +13485,15 @@ var author$project$View$prevPos = function (prev) {
 		return '(' + (elm$core$String$fromInt(p.x) + (elm$core$String$fromInt(p.y) + ')'));
 	}
 };
+var elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
 var author$project$View$symbol = function (step) {
 	return _Utils_ap(
 		author$project$Kifu$Board$playerToSymbol(step.player),
@@ -13493,12 +13503,17 @@ var author$project$View$symbol = function (step) {
 			A2(
 				elm$core$Maybe$map,
 				function (c) {
+					var notPromoted = (!c.putted) && ((!A2(
+						elm$core$List$member,
+						c.piece,
+						_List_fromArray(
+							[author$project$Kifu$Board$GYOKU, author$project$Kifu$Board$KIN, author$project$Kifu$Board$RYU, author$project$Kifu$Board$UMA, author$project$Kifu$Board$NARI_GIN, author$project$Kifu$Board$NARI_KEI, author$project$Kifu$Board$NARI_KYOU, author$project$Kifu$Board$TO]))) && ((_Utils_eq(step.player, author$project$Kifu$Board$FIRST) && (c.pos.y <= 3)) || (_Utils_eq(step.player, author$project$Kifu$Board$SECOND) && (c.pos.y >= 7))));
 					return _Utils_ap(
 						author$project$Kifu$Board$posToString(c.pos),
 						_Utils_ap(
 							author$project$Kifu$Board$pieceText(c.piece),
 							_Utils_ap(
-								c.promoted ? '成' : '',
+								c.promoted ? '成' : (notPromoted ? '不成' : ''),
 								author$project$View$prevPos(step.prev))));
 				},
 				step.curr)));
