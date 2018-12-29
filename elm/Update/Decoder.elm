@@ -70,8 +70,9 @@ step =
         (D.field "seq" D.int)
         -- boardId dummy
         (D.succeed "")
-        (D.map2 (\pi -> Maybe.map (\p -> { pos = p, piece = pi }))
+        (D.map3 (\pi pr -> Maybe.map (\p -> { pos = p, piece = pi, promoted = pr }))
             (D.map KB.pieceFromString <| fieldDefault "piece" "NULL" D.string)
+            (fieldDefault "promoted" False D.bool)
             (pos "pos")
         )
         (order "player")

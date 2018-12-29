@@ -77,7 +77,15 @@ symbol step =
             )
             (Maybe.map
                 (\c ->
-                    KB.posToString c.pos ++ KB.pieceText c.piece ++ prevPos step.prev
+                    KB.posToString c.pos
+                        ++ KB.pieceText c.piece
+                        ++ (if c.promoted then
+                                "成"
+
+                            else
+                                ""
+                           )
+                        ++ prevPos step.prev
                 )
                 step.curr
             )

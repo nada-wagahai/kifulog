@@ -6284,18 +6284,20 @@ var author$project$Update$Decoder$step = A8(
 	author$project$Model$Step,
 	A2(elm$json$Json$Decode$field, 'seq', elm$json$Json$Decode$int),
 	elm$json$Json$Decode$succeed(''),
-	A3(
-		elm$json$Json$Decode$map2,
-		function (pi) {
-			return elm$core$Maybe$map(
-				function (p) {
-					return {piece: pi, pos: p};
-				});
-		},
+	A4(
+		elm$json$Json$Decode$map3,
+		F2(
+			function (pi, pr) {
+				return elm$core$Maybe$map(
+					function (p) {
+						return {piece: pi, pos: p, promoted: pr};
+					});
+			}),
 		A2(
 			elm$json$Json$Decode$map,
 			author$project$Kifu$Board$pieceFromString,
 			A3(author$project$Update$Decoder$fieldDefault, 'piece', 'NULL', elm$json$Json$Decode$string)),
+		A3(author$project$Update$Decoder$fieldDefault, 'promoted', false, elm$json$Json$Decode$bool),
 		author$project$Update$Decoder$pos('pos')),
 	author$project$Update$Decoder$order('player'),
 	author$project$Update$Decoder$pos('prev'),
@@ -13495,7 +13497,9 @@ var author$project$View$symbol = function (step) {
 						author$project$Kifu$Board$posToString(c.pos),
 						_Utils_ap(
 							author$project$Kifu$Board$pieceText(c.piece),
-							author$project$View$prevPos(step.prev)));
+							_Utils_ap(
+								c.promoted ? '成' : '',
+								author$project$View$prevPos(step.prev))));
 				},
 				step.curr)));
 };
