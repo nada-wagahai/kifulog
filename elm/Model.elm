@@ -50,6 +50,7 @@ type alias Player =
 type alias SameStep =
     { kifuId : String
     , seq : Int
+    , finished : Bool
     , players : List Player
     , start : Time.Posix
     }

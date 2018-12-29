@@ -105,9 +105,10 @@ comments =
 sameSteps : D.Decoder (List SameStep)
 sameSteps =
     D.list <|
-        D.map4 SameStep
+        D.map5 SameStep
             (D.field "kifuId" D.string)
             (D.field "seq" D.int)
+            (fieldDefault "finished" False D.bool)
             (D.field "players" players)
             (D.map (\i -> Time.millisToPosix <| i * 1000) <| D.field "startTs" D.int)
 

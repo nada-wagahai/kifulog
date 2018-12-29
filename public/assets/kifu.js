@@ -6239,9 +6239,9 @@ var author$project$Update$Decoder$pieces = function (label) {
 				author$project$Update$Decoder$pos('pos'),
 				author$project$Update$Decoder$order('order'))));
 };
-var author$project$Model$SameStep = F4(
-	function (kifuId, seq, players, start) {
-		return {kifuId: kifuId, players: players, seq: seq, start: start};
+var author$project$Model$SameStep = F5(
+	function (kifuId, seq, finished, players, start) {
+		return {finished: finished, kifuId: kifuId, players: players, seq: seq, start: start};
 	});
 var author$project$Model$Player = F2(
 	function (order, name) {
@@ -6253,12 +6253,14 @@ var author$project$Update$Decoder$players = elm$json$Json$Decode$list(
 		author$project$Model$Player,
 		author$project$Update$Decoder$order('order'),
 		A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string)));
+var elm$json$Json$Decode$map5 = _Json_map5;
 var author$project$Update$Decoder$sameSteps = elm$json$Json$Decode$list(
-	A5(
-		elm$json$Json$Decode$map4,
+	A6(
+		elm$json$Json$Decode$map5,
 		author$project$Model$SameStep,
 		A2(elm$json$Json$Decode$field, 'kifuId', elm$json$Json$Decode$string),
 		A2(elm$json$Json$Decode$field, 'seq', elm$json$Json$Decode$int),
+		A3(author$project$Update$Decoder$fieldDefault, 'finished', false, elm$json$Json$Decode$bool),
 		A2(elm$json$Json$Decode$field, 'players', author$project$Update$Decoder$players),
 		A2(
 			elm$json$Json$Decode$map,
@@ -14947,9 +14949,12 @@ var author$project$View$sameSteps = function (model) {
 			});
 	};
 	var myself = function (s) {
-		return (!_Utils_eq(s.kifuId, model.game.kifu.kifuId)) || (!_Utils_eq(s.seq, model.game.step.seq));
+		return _Utils_eq(s.kifuId, model.game.kifu.kifuId) && (_Utils_eq(model.game.step.seq, s.seq) || (_Utils_eq(model.game.step.seq + 1, s.seq) || _Utils_eq(model.game.step.seq, s.seq + 1)));
 	};
-	var steps = A2(elm$core$List$filter, myself, model.game.sameSteps);
+	var steps = A2(
+		elm$core$List$filter,
+		A2(elm$core$Basics$composeL, elm$core$Basics$not, myself),
+		model.game.sameSteps);
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(

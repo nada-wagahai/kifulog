@@ -347,10 +347,11 @@ sameSteps : Model -> Element Msg
 sameSteps model =
     let
         myself s =
-            s.kifuId /= model.game.kifu.kifuId || s.seq /= model.game.step.seq
+            (s.kifuId == model.game.kifu.kifuId)
+                && (model.game.step.seq == s.seq || model.game.step.seq + 1 == s.seq || model.game.step.seq == s.seq + 1)
 
         steps =
-            List.filter myself model.game.sameSteps
+            List.filter (not << myself) model.game.sameSteps
 
         stepLink step =
             let

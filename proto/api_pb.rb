@@ -3,14 +3,14 @@
 
 require 'google/protobuf'
 
-require 'proto/comment_pb'
 require 'proto/kifu_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "api.Step" do
     optional :kifu_id, :string, 1
     optional :seq, :int32, 2
-    optional :start_ts, :int64, 3
-    repeated :players, :message, 4, "kifu.Player"
+    optional :finished, :bool, 3
+    optional :start_ts, :int64, 4
+    repeated :players, :message, 5, "kifu.Player"
   end
   add_message "api.Comment" do
     optional :id, :string, 1

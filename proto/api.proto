@@ -2,14 +2,14 @@ syntax = "proto3";
 
 package api;
 
-import 'proto/comment.proto';
 import 'proto/kifu.proto';
 
 message Step {
   string kifu_id = 1;
   int32 seq = 2;
-  int64 start_ts = 3;
-  repeated kifu.Player players = 4;
+  bool finished = 3;
+  int64 start_ts = 4;
+  repeated kifu.Player players = 5;
 }
 
 message Comment {

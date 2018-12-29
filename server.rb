@@ -203,6 +203,7 @@ class Server < Sinatra::Base
       Api::Step.new(
         kifu_id: step_id.kifu_id,
         seq: step_id.seq,
+        finished: step_id.finished,
         start_ts: kifu.start_ts,
         players: kifu.players.to_a,
       )
