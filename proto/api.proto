@@ -2,7 +2,30 @@ syntax = "proto3";
 
 package api;
 
+option go_package = "github.com/nada-wagahai/kifulog/go/proto/api";
+
+import "google/api/annotations.proto";
 import 'proto/kifu.proto';
+
+service API {
+  rpc Index(IndexRequest) returns (IndexResponse) {
+    option (google.api.http) = {
+      get: "/index"
+    };
+  }
+
+  rpc Kifu(KifuRequest) returns (kifu.Kifu) {
+    option (google.api.http) = {
+      get: "/kifu/{kifu_id}"
+    };
+  }
+
+  rpc Board(BoardRequest) returns (BoardResponse) {
+    option (google.api.http) = {
+      get: "/board/{board_id}"
+    };
+  }
+}
 
 message Step {
   string kifu_id = 1;
@@ -19,16 +42,27 @@ message Comment {
   bool owned = 4;
 }
 
+message KifuRequest{
+  string kifu_id = 1;
+}
+
+message BoardRequest {
+  string board_id = 1;
+}
+
 message BoardResponse {
   kifu.Board board = 1;
   repeated Comment comments = 2;
   repeated Step steps = 3;
 }
 
+message IndexRequest {
+}
+
 message IndexResponse {
   message Entry {
     string id = 1;
-	kifu.Kifu kifu = 2;
+    kifu.Kifu kifu = 2;
   }
   repeated Entry entries = 1;
   repeated Comment recent_comments = 2;
