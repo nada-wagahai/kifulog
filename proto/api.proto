@@ -10,19 +10,19 @@ import 'proto/kifu.proto';
 service API {
   rpc Index(IndexRequest) returns (IndexResponse) {
     option (google.api.http) = {
-      get: "/index"
+      get: "/api/index"
     };
   }
 
   rpc Kifu(KifuRequest) returns (kifu.Kifu) {
     option (google.api.http) = {
-      get: "/kifu/{kifu_id}"
+      get: "/api/kifu/{kifu_id}"
     };
   }
 
   rpc Board(BoardRequest) returns (BoardResponse) {
     option (google.api.http) = {
-      get: "/board/{board_id}"
+      get: "/api/board/{board_id}"
     };
   }
 }

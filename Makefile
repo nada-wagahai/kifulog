@@ -1,5 +1,7 @@
 PROTO_MODULES = api kifu
 PROTO_SRCS = $(foreach n, $(PROTO_MODULES), proto/$n.proto)
+GATEWAY_MODULES = api
+GATEWAY_SRCS = $(foreach n, $(GATEWAY_MODULES), proto/$n.proto)
 
 PROTO_INCLUDES = -I. -I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 
@@ -8,9 +10,16 @@ PROTO_INCLUDES = -I. -I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/thir
 default:
 	@echo $(PROTO_SRCS)
 
-proto:
+proto: proto_pb proto_gw
+
+proto_pb:
 	@for f in $(PROTO_SRCS); do \
 		protoc $(PROTO_INCLUDES) --go_out=plugins=grpc:$(GOPATH)/src $$f; \
+	done
+
+proto_gw:
+	@for f in $(GATEWAY_SRCS); do \
+		protoc $(PROTO_INCLUDES) --grpc-gateway_out=logtostderr=true:$(GOPATH)/src $$f; \
 	done
 
 setup:
