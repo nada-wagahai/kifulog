@@ -14,6 +14,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
+	dblib "github.com/nada-wagahai/kifulog/go/lib/db"
 	"github.com/nada-wagahai/kifulog/go/lib/gateway"
 	"github.com/nada-wagahai/kifulog/go/lib/httpx"
 	apipb "github.com/nada-wagahai/kifulog/go/proto/api"
@@ -24,6 +25,8 @@ import (
 var (
 	rpcBind  = flag.String("rpc", ":9001", ":$port to bind for rpc")
 	httpBind = flag.String("http", ":8081", ":$port to bind for http")
+
+	dbpath = flag.String("dbpath", "data/db", "YAML DB path")
 )
 
 func init() {
@@ -43,7 +46,13 @@ func main() {
 		grpc.UnaryInterceptor(rpc.LoggerInterceptor(log.New(os.Stderr, "rpc: ", 0))),
 	)
 
-	apipb.RegisterAPIServer(s, rpc.NewServer())
+	db, err := dblib.NewYaml(*dbpath)
+	if err != nil {
+		log.Fatalf("db.NewYaml: %v", err)
+	}
+
+	srv := rpc.NewServer(db)
+	apipb.RegisterAPIServer(s, srv)
 
 	go func() {
 		if err := s.Serve(listen); err != nil {

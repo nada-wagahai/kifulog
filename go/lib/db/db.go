@@ -12,6 +12,14 @@ import (
 	kifupb "github.com/nada-wagahai/kifulog/go/proto/kifu"
 )
 
+type DB interface {
+	GetKifu(string) (*kifupb.Kifu, error)
+}
+
+var (
+	ErrKeyNotFound = fmt.Errorf("key not found")
+)
+
 type yamldb struct {
 	path string
 
@@ -23,7 +31,7 @@ type yamldb struct {
 	metadata map[string]string
 }
 
-func NewFile(path string) (*yamldb, error) {
+func NewYaml(path string) (*yamldb, error) {
 	kifu, err := loadDB(path + "/kifu")
 	if err != nil {
 		return nil, fmt.Errorf("kifu db: %v", err)
@@ -97,7 +105,7 @@ func saveDB(file string, db map[string]string) error {
 func (db *yamldb) GetKifu(id string) (*kifupb.Kifu, error) {
 	str, ok := db.kifu[id]
 	if !ok {
-		return nil, fmt.Errorf("key not found")
+		return nil, ErrKeyNotFound
 	}
 
 	buf := &kifupb.Kifu{}
