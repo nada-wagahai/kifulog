@@ -77,6 +77,23 @@ func loadDB(path string) (map[string]string, error) {
 	return kv, nil
 }
 
+func saveDB(file string, db map[string]string) error {
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	encoder := yaml.NewEncoder(f)
+	defer encoder.Close()
+
+	if err := encoder.Encode(db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *yamldb) GetKifu(id string) (*kifupb.Kifu, error) {
 	str, ok := db.kifu[id]
 	if !ok {
