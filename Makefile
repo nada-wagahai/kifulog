@@ -1,11 +1,11 @@
-PROTO_MODULES = api kifu
+PROTO_MODULES = api kifu account
 PROTO_SRCS = $(foreach n, $(PROTO_MODULES), proto/$n.proto)
 GATEWAY_MODULES = api
 GATEWAY_SRCS = $(foreach n, $(GATEWAY_MODULES), proto/$n.proto)
 
 PROTO_INCLUDES = -I. -I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 
-.PHONY: proto setup
+.PHONY: proto setup proto_pb proto_gw
 
 default:
 	@echo $(PROTO_SRCS)

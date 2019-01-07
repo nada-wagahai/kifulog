@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package account;
 
+option go_package = "github.com/nada-wagahai/kifulog/go/proto/account";
+
 enum Role {
   ADMIN = 0;
   PLAYER = 1;

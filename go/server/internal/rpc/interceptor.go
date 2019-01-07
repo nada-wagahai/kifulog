@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	dblib "github.com/nada-wagahai/kifulog/go/lib/db"
 )
 
 func LoggerInterceptor(logger *log.Logger) grpc.UnaryServerInterceptor {
@@ -41,6 +43,25 @@ func UpdateHTTPHeaderInterceptor(h http.Handler) http.Handler {
 		// Send the path to grpc-gateway in order to have it translate to grpc metadata.
 		// TODO Make sure if it is valid to insert a path into Pragma request header.
 		r.Header["Pragma"] = []string{r.URL.Path}
+
+		session, err := r.Cookie("session")
+		if err == nil {
+			r.Header["Session"] = []string{session.Value}
+		}
+
 		h.ServeHTTP(w, r)
 	})
+}
+
+func AuthenticationInterceptor(db dblib.DB) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Internal, "rpc.AuthenticationInterceptor: No metadata")
+		}
+
+		paths := md["grpcgateway-session"]
+
+		return handler(ctx, req)
+	}
 }
