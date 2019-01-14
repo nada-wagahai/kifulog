@@ -7442,6 +7442,76 @@ var author$project$Kifu$Board$pieceText = function (type_) {
 			return '';
 	}
 };
+var author$project$Kifu$Board$capturedStr = function (_n0) {
+	var ptype = _n0.a;
+	var i = _n0.b;
+	var is = _List_fromArray(
+		['', '', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八']);
+	return _List_fromArray(
+		[
+			author$project$Kifu$Board$pieceText(ptype),
+			A2(
+			elm$core$Maybe$withDefault,
+			'',
+			elm$core$List$head(
+				A2(elm$core$List$drop, i, is)))
+		]);
+};
+var elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(xs);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Kifu$Board$clustered = F2(
+	function (_n0, ps) {
+		clustered:
+		while (true) {
+			var ctype = _n0.a;
+			var ccount = _n0.b;
+			var _n1 = elm$core$List$head(ps);
+			if (_n1.$ === 'Nothing') {
+				return _List_fromArray(
+					[
+						_Utils_Tuple2(ctype, ccount)
+					]);
+			} else {
+				var p = _n1.a;
+				var _n2 = elm$core$List$tail(ps);
+				if (_n2.$ === 'Nothing') {
+					return _List_Nil;
+				} else {
+					var ps_ = _n2.a;
+					if (_Utils_eq(p.type_, ctype)) {
+						var $temp$_n0 = _Utils_Tuple2(ctype, ccount + 1),
+							$temp$ps = ps_;
+						_n0 = $temp$_n0;
+						ps = $temp$ps;
+						continue clustered;
+					} else {
+						if (_Utils_eq(ctype, author$project$Kifu$Board$NULL)) {
+							var $temp$_n0 = _Utils_Tuple2(p.type_, 1),
+								$temp$ps = ps_;
+							_n0 = $temp$_n0;
+							ps = $temp$ps;
+							continue clustered;
+						} else {
+							return A2(
+								elm$core$List$cons,
+								_Utils_Tuple2(ctype, ccount),
+								A2(
+									author$project$Kifu$Board$clustered,
+									_Utils_Tuple2(p.type_, 1),
+									ps_));
+						}
+					}
+				}
+			}
+		}
+	});
 var elm$core$List$isEmpty = function (xs) {
 	if (!xs.b) {
 		return true;
@@ -7449,14 +7519,18 @@ var elm$core$List$isEmpty = function (xs) {
 		return false;
 	}
 };
+var elm$core$String$concat = function (strings) {
+	return A2(elm$core$String$join, '', strings);
+};
 var author$project$Kifu$Board$captured = function (ps) {
-	return elm$core$List$isEmpty(ps) ? _List_fromArray(
-		['なし']) : A2(
-		elm$core$List$map,
-		function (p) {
-			return author$project$Kifu$Board$pieceText(p.type_);
-		},
-		ps);
+	return elm$core$List$isEmpty(ps) ? 'なし' : elm$core$String$concat(
+		A2(
+			elm$core$List$concatMap,
+			author$project$Kifu$Board$capturedStr,
+			A2(
+				author$project$Kifu$Board$clustered,
+				_Utils_Tuple2(author$project$Kifu$Board$NULL, 0),
+				ps)));
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
@@ -9797,9 +9871,6 @@ var mdgriffith$elm_ui$Internal$Style$commonValues = elm$core$List$concat(
 var mdgriffith$elm_ui$Internal$Style$explainer = '\n.explain {\n    border: 6px solid rgb(174, 121, 15) !important;\n}\n.explain > .' + (mdgriffith$elm_ui$Internal$Style$classes.any + (' {\n    border: 4px dashed rgb(0, 151, 167) !important;\n}\n\n.ctr {\n    border: none !important;\n}\n.explain > .ctr > .' + (mdgriffith$elm_ui$Internal$Style$classes.any + ' {\n    border: 4px dashed rgb(0, 151, 167) !important;\n}\n\n')));
 var mdgriffith$elm_ui$Internal$Style$sliderOverrides = '\n\n/* General Input Reset */\ninput[type=range] {\n  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */\n  /* width: 100%;  Specific width is required for Firefox. */\n  background: transparent; /* Otherwise white in Chrome */\n  position:absolute;\n  left:0;\n  top:0;\n  z-index:10;\n  width: 100%;\n  outline: dashed 1px;\n  height: 100%;\n  opacity: 0;\n}\n\n/* Hide all syling for track */\ninput[type=range]::-moz-range-track {\n    background: transparent;\n    cursor: pointer;\n}\ninput[type=range]::-ms-track {\n    background: transparent;\n    cursor: pointer;\n}\ninput[type=range]::-webkit-slider-runnable-track {\n    background: transparent;\n    cursor: pointer;\n}\n\n/* Thumbs */\ninput[type=range]::-webkit-slider-thumb {\n    -webkit-appearance: none;\n    opacity: 0.5;\n    width: 80px;\n    height: 80px;\n    background-color: black;\n    border:none;\n    border-radius: 5px;\n}\ninput[type=range]::-moz-range-thumb {\n    opacity: 0.5;\n    width: 80px;\n    height: 80px;\n    background-color: black;\n    border:none;\n    border-radius: 5px;\n}\ninput[type=range]::-ms-thumb {\n    opacity: 0.5;\n    width: 80px;\n    height: 80px;\n    background-color: black;\n    border:none;\n    border-radius: 5px;\n}\ninput[type=range][orient=vertical]{\n    writing-mode: bt-lr; /* IE */\n    -webkit-appearance: slider-vertical;  /* WebKit */\n}\n';
 var mdgriffith$elm_ui$Internal$Style$overrides = '@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {' + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.any) + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.row) + (' > ' + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.any) + (' { flex-basis: auto !important; } ' + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.any) + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.row) + (' > ' + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.any) + (mdgriffith$elm_ui$Internal$Style$dot(mdgriffith$elm_ui$Internal$Style$classes.container) + (' { flex-basis: auto !important; }}' + (mdgriffith$elm_ui$Internal$Style$sliderOverrides + mdgriffith$elm_ui$Internal$Style$explainer))))))))))));
-var elm$core$String$concat = function (strings) {
-	return A2(elm$core$String$join, '', strings);
-};
 var mdgriffith$elm_ui$Internal$Style$Intermediate = function (a) {
 	return {$: 'Intermediate', a: a};
 };
@@ -13001,13 +13072,7 @@ var author$project$Kifu$Board$board = function (scene) {
 				mdgriffith$elm_ui$Element$el,
 				author$project$Kifu$Board$capturedAttrs(author$project$Kifu$Board$SECOND),
 				mdgriffith$elm_ui$Element$text(
-					A2(
-						elm$core$String$join,
-						'',
-						A2(
-							elm$core$List$cons,
-							'☖持駒: ',
-							author$project$Kifu$Board$captured(capturedSecond))))),
+					'☖持駒: ' + author$project$Kifu$Board$captured(capturedSecond))),
 				A2(
 				mdgriffith$elm_ui$Element$column,
 				_List_Nil,
@@ -13049,13 +13114,7 @@ var author$project$Kifu$Board$board = function (scene) {
 				mdgriffith$elm_ui$Element$el,
 				author$project$Kifu$Board$capturedAttrs(author$project$Kifu$Board$FIRST),
 				mdgriffith$elm_ui$Element$text(
-					A2(
-						elm$core$String$join,
-						'',
-						A2(
-							elm$core$List$cons,
-							'☗持駒: ',
-							author$project$Kifu$Board$captured(capturedFirst)))))
+					'☗持駒: ' + author$project$Kifu$Board$captured(capturedFirst)))
 			]));
 };
 var elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
@@ -13509,21 +13568,13 @@ var author$project$Kifu$Board$playerToSymbol = function (player) {
 		return '☖';
 	}
 };
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
-};
 var author$project$Kifu$Board$posToString = function (pos) {
-	var ys = A2(
-		elm$core$List$map,
-		elm$core$String$fromChar,
-		elm$core$String$toList('0一二三四五六七八九'));
-	var xs = A2(
-		elm$core$List$map,
-		elm$core$String$fromChar,
-		elm$core$String$toList('0123456789'));
+	var ys = _List_fromArray(
+		['', '一', '二', '三', '四', '五', '六', '七', '八', '九']);
+	var xs = _List_fromArray(
+		['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 	var toStr = F2(
-		function (i, is) {
+		function (is, i) {
 			return A2(
 				elm$core$Maybe$withDefault,
 				'',
@@ -13531,8 +13582,8 @@ var author$project$Kifu$Board$posToString = function (pos) {
 					A2(elm$core$List$drop, i, is)));
 		});
 	return _Utils_ap(
-		A2(toStr, pos.x, xs),
-		A2(toStr, pos.y, ys));
+		A2(toStr, xs, pos.x),
+		A2(toStr, ys, pos.y));
 };
 var author$project$View$prevPos = function (prev) {
 	if (prev.$ === 'Nothing') {

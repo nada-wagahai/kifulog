@@ -212,15 +212,15 @@ posToString : Pos -> String
 posToString pos =
     let
         xs =
-            List.map String.fromChar <| String.toList "0123456789"
+            [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
         ys =
-            List.map String.fromChar <| String.toList "0一二三四五六七八九"
+            [ "", "一", "二", "三", "四", "五", "六", "七", "八", "九" ]
 
-        toStr i is =
+        toStr is i =
             Maybe.withDefault "" <| List.head <| List.drop i is
     in
-    toStr pos.x xs ++ toStr pos.y ys
+    toStr xs pos.x ++ toStr ys pos.y
 
 
 type alias Piece =
@@ -266,13 +266,46 @@ capturedAttrs player =
         Elm.rotate pi :: Elm.alignTop :: attrs
 
 
-captured : List Piece -> List String
+clustered : ( PieceType, Int ) -> List Piece -> List ( PieceType, Int )
+clustered ( ctype, ccount ) ps =
+    case List.head ps of
+        Nothing ->
+            [ ( ctype, ccount ) ]
+
+        Just p ->
+            case List.tail ps of
+                Nothing ->
+                    []
+
+                Just ps_ ->
+                    if p.type_ == ctype then
+                        clustered ( ctype, ccount + 1 ) ps_
+
+                    else if ctype == NULL then
+                        clustered ( p.type_, 1 ) ps_
+
+                    else
+                        ( ctype, ccount ) :: clustered ( p.type_, 1 ) ps_
+
+
+capturedStr : ( PieceType, Int ) -> List String
+capturedStr ( ptype, i ) =
+    let
+        is =
+            [ "", "", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八" ]
+    in
+    [ pieceText ptype
+    , Maybe.withDefault "" <| List.head <| List.drop i is
+    ]
+
+
+captured : List Piece -> String
 captured ps =
     if List.isEmpty ps then
-        [ "なし" ]
+        "なし"
 
     else
-        List.map (\p -> pieceText p.type_) ps
+        String.concat <| List.concatMap capturedStr <| clustered ( NULL, 0 ) ps
 
 
 board : Scene -> Element Msg
@@ -294,9 +327,8 @@ board scene =
     Elm.row []
         [ Elm.el (capturedAttrs SECOND) <|
             Elm.text <|
-                String.join "" <|
-                    "☖持駒: "
-                        :: captured capturedSecond
+                "☖持駒: "
+                    ++ captured capturedSecond
         , Elm.column []
             [ Elm.row [] <|
                 List.map (headRow << Elm.text << String.fromInt) <|
@@ -311,9 +343,8 @@ board scene =
             ]
         , Elm.el (capturedAttrs FIRST) <|
             Elm.text <|
-                String.join "" <|
-                    "☗持駒: "
-                        :: captured capturedFirst
+                "☗持駒: "
+                    ++ captured capturedFirst
         ]
 
 
