@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package index;
 
+option go_package = "github.com/nada-wagahai/kifulog/go/proto/index";
+
 message Document {
   oneof type {
     Kifu kifu = 1;

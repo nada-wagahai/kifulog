@@ -1,4 +1,4 @@
-PROTO_MODULES = api kifu account
+PROTO_MODULES = api kifu account index
 PROTO_SRCS = $(foreach n, $(PROTO_MODULES), proto/$n.proto)
 GATEWAY_MODULES = api
 GATEWAY_SRCS = $(foreach n, $(GATEWAY_MODULES), proto/$n.proto)
@@ -12,12 +12,12 @@ default:
 
 proto: proto_pb proto_gw
 
-proto_pb:
+proto_pb: $(PROTO_SRCS)
 	@for f in $(PROTO_SRCS); do \
 		protoc $(PROTO_INCLUDES) --go_out=plugins=grpc:$(GOPATH)/src $$f; \
 	done
 
-proto_gw:
+proto_gw: $(GATEWAY_SRCS)
 	@for f in $(GATEWAY_SRCS); do \
 		protoc $(PROTO_INCLUDES) --grpc-gateway_out=logtostderr=true:$(GOPATH)/src $$f; \
 	done
